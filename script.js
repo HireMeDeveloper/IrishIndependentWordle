@@ -5,10 +5,18 @@ let targetWords
 let targetWordNumber
 
 // This is selected based on the number of days since January 1st, 2024. With the day number as the index from the targetWords array
+const offsetFromData = new Date(2024, 0, 1)
 let targetWord
 
-let gameState = {}
+let gameState = {
+    puzzle: targetWordNumber,
+    letters: [],
+    attempts: 0,
+    progress: "in-progress",
+    completed: false
+}
 let stateWasLoaded = false
+let wasReset = false
 
 fetchCSV()
 
@@ -25,6 +33,19 @@ const guessGrid = document.querySelector("[data-guess-grid]")
 const alertContainer = document.querySelector("[data-alert-container]")
 const statsAlertContainer = document.querySelector("[data-stats-alert-container]")
 
+// Custom event is 'onFirstCompletion' and the event detail is the current gameState at the time of completion
+// This will include:
+// gameState.puzzle (puzzle number as int)
+// gameState.letters (array of objects with letters[i].letter and letters[i].state where letter is a string with a single letter, and state is a string of either 'wrong', 'wrong-location', or 'correct')
+// gameState.attempts (number of attempts as int)
+// gameState.progress (string of either 'in-progress', 'won', or 'lost')
+// gameState.completed (boolean, this will always be true at the time of completion)
+
+document.addEventListener('onFirstCompletion', e => {
+    const customGameState = e.detail
+    console.log("Event Detail: " + customGameState.letters.length)
+})
+
 async function fetchCSV() {
     try {
         const responseCSV = await fetch('Focail_Dictionary.csv');
@@ -37,7 +58,6 @@ async function fetchCSV() {
         const response3 = await fetch('irishDictionary.json');
         irishDictionary = await response3.json();
 
-        const offsetFromData = new Date(2024, 0, 1)
         const msOffset = Date.now() - offsetFromData
         const dayOffset = msOffset / 1000 / 60 / 60 / 24
         const targetIndex = Math.floor(dayOffset + 0) % targetWords.length
@@ -86,7 +106,39 @@ function resetGameState() {
         completed: false
     }
 
-    localStorage.setItem("gameState", JSON.stringify(gameState))
+    storeData()
+}
+
+function playAgain() {
+    wasReset = true
+    setReplayButton(false)
+    clearAlerts()
+
+    const tiles = document.querySelectorAll('.tile')
+
+    tiles.forEach(tile => {
+        const letter = tile.textContent
+        const key = keyboard.querySelector(`[data-key="${letter}"i]`)
+        if (key != null) {
+            key.classList.remove("wrong")
+            key.classList.remove("wrong-location")
+            key.classList.remove("correct")
+        }
+
+        tile.textContent = ""
+        delete tile.dataset.state
+        delete tile.dataset.letter
+    })
+
+    gameState = {
+        puzzle: targetWordNumber,
+        letters: [],
+        attempts: 0,
+        progress: "in-progress",
+        completed: true
+    }
+
+    startInteraction()
 }
 
 function parseCSV(csv) {
@@ -228,7 +280,7 @@ function submitGuess() {
     }
 
     gameState.attempts += 1
-    localStorage.setItem("gameState", JSON.stringify(gameState))
+    storeData()
 
     stopInteraction()
     activeTiles.forEach((...params) => flipTile(...params, guess, true))
@@ -237,29 +289,31 @@ function submitGuess() {
 function flipTile(tile, index, array, guess, writeData) {
     const letter = tile.dataset.letter
     const key = keyboard.querySelector(`[data-key="${letter}"i]`)
+
+    let state = ""
+    if (targetWord[index] === letter) {
+        state = "correct"
+    } else if (targetWord.includes(letter)) {
+        state = "wrong-location"
+    } else {
+        state = "wrong"
+    }
+
+    if (writeData) {
+        gameState.letters.push({ letter: letter, state: state })
+        storeData()
+    }
+
     setTimeout(() => {
         tile.classList.add("flip")
     }, index % 5 * FLIP_ANIMATION_DURATION / (writeData ? 2 : 4))
 
     tile.addEventListener("transitionend", () => {
-        let state = ""
 
         tile.classList.remove("flip")
-        if (targetWord[index] === letter) {
-            state = "correct"
-        } else if (targetWord.includes(letter)) {
-            state = "wrong-location"
-        } else {
-            state = "wrong"
-        }
 
         tile.dataset.state = state
         key.classList.add(state)
-        
-        if (writeData) {
-            gameState.letters.push({ letter: letter, state: state })
-            localStorage.setItem("gameState", JSON.stringify(gameState))
-        }
 
         if (index === array.length - 1) {
             tile.addEventListener("transitionend", () => {
@@ -276,11 +330,7 @@ function getActiveTiles() {
 
 function showAlert(message, duration = 1000) {
     if (duration === null) {
-        const alerts = document.querySelectorAll('.alert')
-
-        alerts.forEach((alert) => {
-            alert.remove()
-        })
+        clearAlerts()
     }
 
     const alert = document.createElement("div")
@@ -297,12 +347,16 @@ function showAlert(message, duration = 1000) {
     }, duration)
 }
 
-function showShareAlert(message, duration = 1000) {
+function clearAlerts() {
     const alerts = document.querySelectorAll('.alert')
 
     alerts.forEach((alert) => {
         alert.remove()
     })
+}
+
+function showShareAlert(message, duration = 1000) {
+    clearAlerts()
 
     const alert = document.createElement("div")
     alert.textContent = message
@@ -328,6 +382,26 @@ function showBadge(tag) {
     languageBadge.appendChild(badge)
 }
 
+function setReplayButton(isSet) {
+    const replayDiv = document.querySelector('[data-replay-button]')
+
+    // This is only hiding the language badge because it shares a location
+    // Remove the language badge lines if there is a new non conflicting location
+    if (isSet) {
+        languageBadge.classList.add("hide")
+
+        // reveal and shake the replay button
+        replayDiv.classList.remove("hide")
+        replayDiv.classList.add("shake")
+        replayDiv.addEventListener("animationend", () => {
+            replayDiv.classList.remove("shake")
+        }, { once: true })
+    } else {
+        replayDiv.classList.add("hide")
+        languageBadge.classList.remove("hide")
+    }
+}
+
 function shakeTiles(tiles) {
     tiles.forEach(tile => {
         tile.classList.add("shake")
@@ -343,7 +417,10 @@ function checkWinLose(guess, tiles) {
         danceTiles(tiles)
         stopInteraction()
         gameState.progress = "won"
-        localStorage.setItem("gameState", JSON.stringify(gameState))
+        storeData()
+
+        // Remove this if replay is not desired
+        setReplayButton(true)
 
         if (gameState.completed === false) {
             completeFirstPuzzleOfTheDay()
@@ -356,7 +433,10 @@ function checkWinLose(guess, tiles) {
         showAlert(targetWord.toUpperCase(), null)
         stopInteraction();
         gameState.progress = "lost"
-        localStorage.setItem("gameState", JSON.stringify(gameState))
+        storeData()
+
+        // Remove this if replay is not desired
+        setReplayButton(true)
 
         if (gameState.completed === false) {
             completeFirstPuzzleOfTheDay()
@@ -366,9 +446,10 @@ function checkWinLose(guess, tiles) {
 
 function completeFirstPuzzleOfTheDay() {
     gameState.completed = true
-    localStorage.setItem("gameState", JSON.stringify(gameState))
+    storeData()
 
-
+    const gameStateEvent = new CustomEvent("onFirstCompletion", { detail: gameState })
+    document.dispatchEvent(gameStateEvent)
 }
 
 function danceTiles(tiles) {
@@ -401,6 +482,10 @@ function showPage(pageId) {
 
         if (!stateWasLoaded) {
             loadGameStateOntoBoard()
+        }
+
+        if (gameState.progress === "lost") {
+            showAlert(targetWord.toUpperCase(), null)
         }
     } 
     else if (pageId === "stats") {
@@ -482,14 +567,33 @@ function populateDistribution() {
 }
 
 function pressShare() {
-    if (gameState.progress === "in-progress") {
+    let alertMessage = "Coppied to clipboard"
+    let gameStateForShare = null
+
+    const localStateJSON = localStorage.getItem("gameState")
+    let localGameState = null
+    if (localStateJSON != null) {
+        localGameState = JSON.parse(localStateJSON)
+
+        // Only use the local game state if it is for todays puzzle
+        if (localGameState.puzzle === targetWordNumber) {
+            gameStateForShare = localGameState
+            if (wasReset) alertMessage = "First completion coppied to clipboard"
+        } else {
+            gameStateForShare = gameState
+        }
+    } else {
+        gameStateForShare = gameState
+    }
+
+    if (gameStateForShare.progress === "in-progress") {
         showShareAlert("Complete the puzzle to share")
         return
     } 
 
-    let textToCopy = "Focail " + targetWordNumber + " " + gameState.attempts + "/6\n\n"
+    let textToCopy = "Focail " + targetWordNumber + " " + gameStateForShare.attempts + "/6\n\n"
 
-    gameState.letters.forEach((tile, index) => {
+    gameStateForShare.letters.forEach((tile, index) => {
         switch (tile.state) {
             case "wrong":
                 textToCopy += "⬛"
@@ -503,10 +607,20 @@ function pressShare() {
         }
 
         let letterNumber = index + 1
-        if (letterNumber % 5 === 0  && letterNumber != gameState.letters.length) textToCopy += "\n"
+        if (letterNumber % 5 === 0 && letterNumber != gameStateForShare.letters.length) textToCopy += "\n"
     })
 
     navigator.clipboard.writeText(textToCopy)
 
-    showShareAlert("Coppied to clipboard")
+    showShareAlert(alertMessage)
+}
+
+function storeData() {
+    // Only store data on the first playthrough
+    if (gameState.completed === true) return
+
+    localStorage.setItem("gameState", JSON.stringify(gameState))
+
+    // Also can store a version of the current state to an account of somekind
+    // This could then be recalled and used as a priority of localStorage
 }

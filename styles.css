@@ -42,6 +42,16 @@ a:active {
     text-decoration: none;
 }
 
+.hide {
+    visibility: hidden;
+    position: absolute;
+}
+
+.show {
+    visibility: visible;
+    position: relative;
+}
+
 .page {
     visibility: hidden;
     position: absolute;
@@ -126,6 +136,13 @@ a:active {
     grid-template-columns: repeat(3, 3em);
     justify-items: center;
     align-items: center;
+}
+
+.button.replay {
+    font-size: 1em;
+    height: 2em;
+    width: 5em;
+    margin-bottom: .25em;
 }
 
 .share-icon {
@@ -381,7 +398,7 @@ h4 {
     background-color: hsl(178, 100%, 19%);
 }
 
-.tile.shake {
+.shake {
     animation: shake 250ms ease-in-out;
 }
 
