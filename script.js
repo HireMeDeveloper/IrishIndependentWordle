@@ -72,6 +72,8 @@ function fetchGameState() {
 
     if (gameState.attempts > 0) {
         showPage("welcome-back")
+    } else {
+        showPage('info')
     }
 }
 
@@ -385,7 +387,7 @@ function showLast() {
 }
 
 function showPage(pageId) {
-    const oldPage = document.querySelector('.page.active').id
+    const oldPage = document.querySelector('.page.active')
 
     const pages = document.querySelectorAll('.page')
     pages.forEach(page => {
@@ -408,7 +410,7 @@ function showPage(pageId) {
         generateWelcomeMessage()
     }
     
-    lastPage = oldPage
+    if (oldPage != null) lastPage = oldPage.id
 }
 
 function loadGameStateOntoBoard() {
