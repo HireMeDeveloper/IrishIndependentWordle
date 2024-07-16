@@ -152,6 +152,31 @@ h3 {
     margin-bottom: -0.5em;
 }
 
+h4 {
+    font-family: 'Times New Roman', Times, serif;
+    font-weight: bold;
+    font-size: 3em;
+    margin-bottom: 0em;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.reduced-margin-bottom {
+    margin-bottom: -.3em;
+}
+
+.return-message {
+    font-size: 2em;
+    margin-bottom: -1em;
+}
+
+.return-info {
+    font-size: .85em;
+    margin-bottom: -0.8em;
+}
+
 .box {
     display: flex;
     align-items: center;

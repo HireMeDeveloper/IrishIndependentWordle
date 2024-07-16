@@ -3,16 +3,16 @@ let irishDictionary
 
 let targetWords
 let targetWordNumber
+
+// This is selected based on the number of days since January 1st, 2024. With the day number as the index from the targetWords array
 let targetWord
+
+let gameState = {}
+let stateWasLoaded = false
 
 fetchCSV()
 
 let lastPage
-let gameState = {
-    letters: [],
-    attempts: 0,
-    progress: "in-progress"
-}
 
 const WORD_LENGTH = 5
 const FLIP_ANIMATION_DURATION = 500
@@ -37,7 +37,7 @@ async function fetchCSV() {
         const response3 = await fetch('irishDictionary.json');
         irishDictionary = await response3.json();
 
-        const offsetFromData = new Date(2022, 0, 1)
+        const offsetFromData = new Date(2024, 0, 1)
         const msOffset = Date.now() - offsetFromData
         const dayOffset = msOffset / 1000 / 60 / 60 / 24
         const targetIndex = Math.floor(dayOffset + 0) % targetWords.length
@@ -46,9 +46,45 @@ async function fetchCSV() {
         targetWord = targetEntry.Word.toLowerCase()
 
         showBadge(targetEntry.Status)
+        fetchGameState()
     } catch (error) {
         console.error('Error reading JSON file:', error);
     }
+}
+
+function fetchGameState() {
+    // need to get the game state for the account from the main site?
+
+    const localStateJSON = localStorage.getItem("gameState")
+    let localGameState = null
+    if (localStateJSON != null) {
+        localGameState = JSON.parse(localStateJSON)
+
+        // Only use the local game state if it is for todays puzzle
+        if (localGameState.puzzle === targetWordNumber) {
+            gameState = localGameState
+        } else {
+            resetGameState()
+        }
+    } else {
+        resetGameState()
+    }
+
+    if (gameState.attempts > 0) {
+        showPage("welcome-back")
+    }
+}
+
+function resetGameState() {
+    gameState = {
+        puzzle: targetWordNumber,
+        letters: [],
+        attempts: 0,
+        progress: "in-progress",
+        completed: false
+    }
+
+    localStorage.setItem("gameState", JSON.stringify(gameState))
 }
 
 function parseCSV(csv) {
@@ -133,9 +169,9 @@ function handleKeyPress(e) {
     }
 }
 
-function pressKey(key) {
+function pressKey(key, ignoreLength = false) {
     const activeTiles = getActiveTiles()
-    if (activeTiles.length >= WORD_LENGTH) return
+    if (activeTiles.length >= WORD_LENGTH && !ignoreLength) return
     const nextTile = guessGrid.querySelector(":not([data-letter])")
     nextTile.dataset.letter = key.toLowerCase()
     nextTile.textContent = key
@@ -153,6 +189,18 @@ function deleteKey() {
     delete lastTile.dataset.letter
 
     selectNextTile()
+}
+
+function loadGuess(guess) {
+    console.log("Loading guess: " + guess)
+
+    for (let i = 0; i < guess.length; i++) {
+        pressKey(guess.charAt(i), true)
+    }
+
+    stopInteraction()
+    const activeTiles = [...getActiveTiles()]
+    activeTiles.forEach((...params) => flipTile(...params, guess, false))
 }
 
 function submitGuess() {
@@ -178,31 +226,37 @@ function submitGuess() {
     }
 
     gameState.attempts += 1
+    localStorage.setItem("gameState", JSON.stringify(gameState))
+
     stopInteraction()
-    activeTiles.forEach((...params) => flipTile(...params, guess))
+    activeTiles.forEach((...params) => flipTile(...params, guess, true))
 }
 
-function flipTile(tile, index, array, guess) {
+function flipTile(tile, index, array, guess, writeData) {
     const letter = tile.dataset.letter
     const key = keyboard.querySelector(`[data-key="${letter}"i]`)
     setTimeout(() => {
         tile.classList.add("flip")
-    }, index * FLIP_ANIMATION_DURATION / 2)
+    }, index % 5 * FLIP_ANIMATION_DURATION / (writeData ? 2 : 4))
 
     tile.addEventListener("transitionend", () => {
+        let state = ""
+
         tile.classList.remove("flip")
         if (targetWord[index] === letter) {
-            tile.dataset.state = "correct"
-            key.classList.add("correct")
-            gameState.letters.push({letter: letter, state: "correct"})
+            state = "correct"
         } else if (targetWord.includes(letter)) {
-            tile.dataset.state = "wrong-location"
-            key.classList.add("wrong-location")
-            gameState.letters.push({ letter: letter, state: "wrong-location" })
+            state = "wrong-location"
         } else {
-            tile.dataset.state = "wrong"
-            key.classList.add("wrong")
-            gameState.letters.push({ letter: letter, state: "wrong" })
+            state = "wrong"
+        }
+
+        tile.dataset.state = state
+        key.classList.add(state)
+        
+        if (writeData) {
+            gameState.letters.push({ letter: letter, state: state })
+            localStorage.setItem("gameState", JSON.stringify(gameState))
         }
 
         if (index === array.length - 1) {
@@ -219,6 +273,14 @@ function getActiveTiles() {
 }
 
 function showAlert(message, duration = 1000) {
+    if (duration === null) {
+        const alerts = document.querySelectorAll('.alert')
+
+        alerts.forEach((alert) => {
+            alert.remove()
+        })
+    }
+
     const alert = document.createElement("div")
     alert.textContent = message
     alert.classList.add("alert")
@@ -279,6 +341,11 @@ function checkWinLose(guess, tiles) {
         danceTiles(tiles)
         stopInteraction()
         gameState.progress = "won"
+        localStorage.setItem("gameState", JSON.stringify(gameState))
+
+        if (gameState.completed === false) {
+            completeFirstPuzzleOfTheDay()
+        }
         return
     }
 
@@ -287,7 +354,19 @@ function checkWinLose(guess, tiles) {
         showAlert(targetWord.toUpperCase(), null)
         stopInteraction();
         gameState.progress = "lost"
+        localStorage.setItem("gameState", JSON.stringify(gameState))
+
+        if (gameState.completed === false) {
+            completeFirstPuzzleOfTheDay()
+        }
     }
+}
+
+function completeFirstPuzzleOfTheDay() {
+    gameState.completed = true
+    localStorage.setItem("gameState", JSON.stringify(gameState))
+
+
 }
 
 function danceTiles(tiles) {
@@ -315,13 +394,64 @@ function showPage(pageId) {
     stopInteraction()
 
     document.getElementById(pageId).classList.add('active')
-    if (pageId === "game" && gameState.progress === "in-progress") startInteraction()
+    if (pageId === "game" ) {
+        if (gameState.progress === "in-progress") startInteraction()
+
+        if (!stateWasLoaded) {
+            loadGameStateOntoBoard()
+        }
+    } 
     else if (pageId === "stats") {
         populateStatistics()
         populateDistribution()
+    } else if (pageId === "welcome-back") {
+        generateWelcomeMessage()
     }
     
     lastPage = oldPage
+}
+
+function loadGameStateOntoBoard() {
+    stateWasLoaded = true
+
+    let guess = ""
+
+    gameState.letters.forEach((tile, index) => {
+        guess += gameState.letters[index].letter
+
+        if ((index + 1) % 5 === 0) {
+            loadGuess(guess)
+            guess = ""
+        }
+    })
+}
+
+function generateWelcomeMessage() {
+    const welcomeMessage = document.querySelector("[data-return-message]")
+    const welcomeDate = document.querySelector("[data-return-date]")
+    const welcomeNumber = document.querySelector("[data-return-number]")
+
+    if (gameState.progress === "in-progress") {
+        welcomeMessage.textContent = "You've made " + gameState.attempts + " of 6 guesses. Keep going!"
+    } else {
+        welcomeMessage.textContent = "Tomorrow's a new day, with a new puzzle. See you then."
+    }
+
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    let mm = today.getMonth();
+    let dd = today.getDate();
+
+    let months = [
+        "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"
+    ]
+
+    if (dd < 10) dd = '0' + dd;
+
+    const formattedToday = months[mm] + " " + dd + ", " + yyyy
+    welcomeDate.textContent = formattedToday
+
+    welcomeNumber.textContent = "No. " + targetWordNumber
 }
 
 function populateStatistics() {

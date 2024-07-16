@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
-    <title>Document</title>
+    <title>Focail</title>
 </head>
 <body>
     <div id="info" class="page active">
@@ -26,25 +26,29 @@
             <h1>
                 How to Play
             </h1>
-            <p>
-                You have 6 tries to guess the correct word. The colour of the tiles will change to reflect how close your guess
-                was to the answer. Once per week the five letter word will be in Irish. The word will not contain a fada. You
-                will notice a saying 'As Gaeilge Inniu', to let you know when you should guess as gaeilge.
+            <p class="reduced-margin-bottom">
+                <span class="bold">1. Six Tries: </span> Guess the word in six attempts.
+            </p>
+            <p class="reduced-margin-bottom">
+                <span class="bold">2. Tile Colours: </span> The Colour of the tiles will change to reflect how close your guess was to the answer.
+            </p>
+            <p class="reduced-margin-bottom">
+                <span class="bold">3. Weekly Irish Word: </span> Once a week, the word will be in Irish (without a fada). Look for "As Gaeilge Inniu" to know when.
             </p>
         </div>
-        <div class="box left">
+        <div class="box left reduced-margin-bottom">
             <div class="tile dummy" data-state="correct">A</div>
             <p class="text-box small">
                 The correct letter
             </p>
         </div>
-        <div class="box left">
+        <div class="box left reduced-margin-bottom">
             <div class="tile dummy" data-state="wrong-location">N</div>
             <p class="text-box small">
                 The correct letter in the wrong place
             </p>
         </div>
-        <div class="box left">
+        <div class="box left reduced-margin-bottom">
             <div class="tile dummy" data-state="wrong">Y</div>
             <p class="text-box small">
                 The incorrect letter
@@ -221,6 +225,28 @@
                 <img src="share-icon.png" class="share-icon">
             </button>
         </div>
+    </div>
+    <div id="welcome-back" class="page">
+        <div class="centered">
+            <img src="Focail_centered.svg" class="focail-large">
+        </div>
+        <div class="text-box">
+            <h4 class="centered">
+                Failte,
+            </h4>
+            <p class="return-message centered" data-return-message>
+                You've made x of 6 guesses! Keep going!
+            </p>
+        </div>
+        <div class="centered">
+            <button class="button play" onclick="showPage('game')">Continue</button>
+        </div>
+        <p class="return-info centered" data-return-date>
+            July 15, 2024
+        </p>
+        <p class="return-info centered" data-return-number>
+            No. 365
+        </p>
     </div>
 </body>
 </html>
