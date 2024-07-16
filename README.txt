@@ -8,7 +8,7 @@ Notes on Implementation:
         gameState.puzzle (puzzle number as int)
         gameState.letters (array of objects with letters[i].letter and letters[i].state where letter is a string with a single letter, and state is a string of either 'wrong', 'wrong-location', or 'correct')
         gameState.attempts (number of attempts as int)
-        gameState.progress (string of either 'in-progress', 'won', or 'lost')
+        gameState.progress (string of either 'in-progress', 'won', or 'lost')3
         gameState.completed (boolean, this will always be true at the time of completion)
 
 Needs:
@@ -25,8 +25,8 @@ Answers:
         The location of the share button is temporary, but it currently replaces the english/irish badge at the top of the screen, And is hidden when pressed, showing the badge again. (This can easly be moved/removed, so let us know if you want to keep it, or move it someplace else)
         The share button will still use their first attempt's data, and subsiquent refreshes of the page will reopen to the welcome screen, with their first attempt on the game board.
     Are the dictionaries supplied okay? 
-        The format of the current dictionary is okay, but this only contains words that will be used as target words for the puzzle.  
-        In order to check to see if any given word submited is valid, we need dictionaries of all valid english/irish words.  
+        Yes the current dictionary that includes the target words and languages for the puzzles is perfect.
+        In order to check to see if any given word submited is valid, we need dictionaries of all valid english/irish words as well.  
         These can be in a simple listed json format, or even combined in .csv. 
         These valid word dictionaries should also include words used within the target words dictionary.
     Are you going to track the game state for users, to prevent reloading to get more guesses? Yes please, can you arrange this?
