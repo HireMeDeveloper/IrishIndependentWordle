@@ -394,7 +394,7 @@ h4 {
 }
 
 .tile[data-state="next"]{
-    border: .07em dashed black;
+    border: .075em dashed black;
 }
 
 .tile[data-state="active"]{

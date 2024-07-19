@@ -48,6 +48,30 @@ document.addEventListener('onFirstCompletion', e => {
     console.log("Event Detail: " + customGameState.letters.length)
 })
 
+// Another custom event "onStatsUpdate" is called after the stats screen is updated. This can be used to call "UpdateStats(json)" with the apropriate information
+const statsUpdateEvent = new Event("onStatsUpdate")
+
+// Here is an example of the data being sent into the "populateStatistics()" and "populateDistribution()" functions
+// The statisticsData is an array of numbers with length of 5, each representing the data for the statistics in order
+// 0: is the number of games played
+// 1: is the win percentage
+// 2: is the current streak of wins
+// 3: is the longest streak of wins
+// 4: is the average turns to solve
+// The distributionData is just an array of ints with length of 6, for each of the bars in the distribution where the index is the number of guesses for a win (index 0 = 1 guess, index 5 = 6 guesses)
+document.addEventListener('onStatsUpdate', e => {
+    const dummyStatistics = [
+        9, 100, 1, 1, 4.2
+    ]
+
+    const dummyDistribution = [
+        1, 2, 3, 6, 2, 1
+    ]
+
+    populateStatistics(dummyStatistics)
+    populateDistribution(dummyDistribution)
+})
+
 async function fetchCSV() {
     try {
         const responseCSV1 = await fetch('Focail_Answers.csv');
@@ -543,6 +567,9 @@ function completeFirstPuzzleOfTheDay() {
 
     const gameStateEvent = new CustomEvent("onFirstCompletion", { detail: gameState })
     document.dispatchEvent(gameStateEvent)
+
+    // Event is also dispatched on the parent
+    parent.document.dispatchEvent(gameStateEvent)
 }
 
 function danceTiles(tiles) {
@@ -584,8 +611,10 @@ function showPage(pageId) {
         }
     } 
     else if (pageId === "stats") {
-        populateStatistics()
-        populateDistribution()
+        document.dispatchEvent(statsUpdateEvent)
+
+        // Event is also dispatched on the parent document
+        parent.document.dispatchEvent(statsUpdateEvent)
     } else if (pageId === "welcome-back") {
         generateWelcomeMessage()
     } else if (pageId === "info") {
@@ -644,30 +673,49 @@ function generateWelcomeMessage() {
     welcomeNumber.textContent = "No. " + targetWordNumber
 }
 
-function populateStatistics() {
+function populateStatistics(statisticsData) {
     // This function is called when the statistics are loaded
     // This is the ideal location to try and retreive cumulative data and display it
 
     const statistics = document.querySelectorAll('.statistic')
 
+    const statisticsLabels = [
+        "Played",
+        "Win %",
+        "Current Streak",
+        "Longest Streak",
+        "Average Turns"
+    ]
+
     statistics.forEach((stat, index) => {
         const data = stat.querySelector('.statistic-data')
         const label = stat.querySelector('.statistic-label')
 
-        data.textContent = index
-        label.textContent = "Dummy statistic label"
+        let entry = statisticsData[index]
+        if (index === 4) entry = entry.toFixed(2)
+
+        if (entry != null) {
+            data.textContent = entry
+            label.textContent = statisticsLabels[index]
+        } else {
+            data.textContent = ""
+            label.textContent = ""
+        }
     })
 }
 
-function populateDistribution() {
+function populateDistribution(arr) {
     const statBars = document.querySelectorAll('.stat-bar')
+    const largest = Math.max(...arr)
 
     statBars.forEach((bar, index) => {
-        bar.textContent = index
+        const number = arr[index]
 
-        bar.style.width = 1 + ((index / 5) * 16) + "em"
+        bar.textContent = number
 
-        if (index === 5) bar.classList.add('last')
+        bar.style.width = 1 + ((number / 5) * 16) + "em"
+
+        if (number === largest) bar.classList.add('last')
         else bar.classList.remove('last')
     })
 }
