@@ -7,7 +7,7 @@
     <script src="script.js" defer></script>
     <title>Focail</title>
 </head>
-<body>
+<body class="outline">
     <div id="info" class="page">
         <div class="centered">
         <div class="box left">
@@ -15,14 +15,14 @@
                 <img src="Focail_horizontal.svg" class="focail">
                 <div>
                     <a onclick="showPage('stats')">
-                        <object data="ranking.png" class="icon"></object>
+                        <img src="stats-icon.svg" class="icon">
                     </a>
                 </div>
             </div>
         </div>
         </div>
         <div class="underline"></div>
-        <div class="text-box">
+        <div class="text-box reduced-margin-bottom">
             <h1>
                 How to Play
             </h1>
@@ -34,6 +34,12 @@
             </p>
             <p class="reduced-margin-bottom">
                 <span class="bold">3. Weekly Irish Word: </span> Once a week, the word will be in Irish (without a fada). Look for "As Gaeilge Inniu" to know when.
+            </p>
+            <p class="reduced-margin-bottom">
+                For word that contain a fada, please just type in the corresponding letter e.g <span class="bold">a</span> for <span class="bold">á</span>, <span class="bold">a</span> for <span class="bold">a</span>, etc.
+            </p>
+            <p class="reduced-margin-bottom">
+                The word list was taken from this <a href="https://github.com/michmech/irish-word-frequency">list</a> created by Michal Měchura
             </p>
         </div>
         <div class="box left reduced-margin-bottom">
@@ -66,12 +72,12 @@
                     <img src="Focail_horizontal.svg" class="focail">
                     <div>
                         <a onclick="showPage('info')">
-                            <object data="question-mark.png" class="icon"></object>
+                            <img src="info-icon.svg" class="icon">
                         </a>
                     </div>
                     <div>
                         <a onclick="showPage('stats')">
-                            <object data="ranking.png" class="icon"></object>
+                            <img src="stats-icon.svg" class="icon">
                         </a>
                     </div>
                     <div data-language-badge></div>
@@ -156,7 +162,7 @@
     <div id="stats" class="page">
         <div class="alert-container stats" data-stats-alert-container></div>
         <div class="box right">
-            <a onclick="showLast()">X</a>
+            <a class="exit" onclick="showLast()">X</a>
         </div>
         <div class="centered">
             <img src="Focail_centered.svg" class="focail-large">
@@ -225,7 +231,7 @@
             <button class="button share" onclick="pressShare()">
                 <div></div>
                 <div>Share</div>
-                <img src="share-icon.png" class="share-icon">
+                <img src="share-icon.svg" class="share-icon">
             </button>
         </div>
     </div>
@@ -250,6 +256,7 @@
         <p class="return-info centered" data-return-number>
             No. 365
         </p>
+        <p></p>
     </div>
 </body>
 </html>

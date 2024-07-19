@@ -1,11 +1,12 @@
 let englishDictionary
 let irishDictionary
 
+let tagetEntry = {}
 let targetWords
 let targetWordNumber
 
 // This is selected based on the number of days since January 1st, 2024. With the day number as the index from the targetWords array
-const offsetFromData = new Date(2024, 0, 1)
+const offsetFromDate = new Date(2024, 0, 1)
 let targetWord
 
 let gameState = {
@@ -17,6 +18,7 @@ let gameState = {
 }
 let stateWasLoaded = false
 let wasReset = false
+let hasOpennedGame = false
 
 fetchCSV()
 
@@ -48,32 +50,107 @@ document.addEventListener('onFirstCompletion', e => {
 
 async function fetchCSV() {
     try {
-        const responseCSV = await fetch('Focail_Dictionary.csv');
-        const csvText = await responseCSV.text();
-        targetWords = parseCSV(csvText);
+        const responseCSV1 = await fetch('Focail_Answers.csv');
+        const csvText1 = await responseCSV1.text();
+        targetWords = parseAnswerCSV(csvText1);
 
-        const response2 = await fetch('englishDictionary.json');
-        englishDictionary = await response2.json();
+        // Parse csv for english dictionary
+        const responseCSV2 = await fetch('Dictionary_English.csv');
+        const csvText2 = await responseCSV2.text();
+        englishDictionary = parseDictionaryCSV(csvText2);
 
-        const response3 = await fetch('irishDictionary.json');
-        irishDictionary = await response3.json();
+        // Add in english words from the target words dictionary too
+        const targetWordsEnglish = targetWords.filter(entry => entry.status.toLowerCase() === "in english today").map(entry => entry.word)
+        englishDictionary.push(...targetWordsEnglish)
 
-        const msOffset = Date.now() - offsetFromData
+        const responseCSV3 = await fetch('Dictionary_Irish.csv');
+        const csvText3 = await responseCSV3.text();
+        irishDictionary = parseDictionaryCSV(csvText3);
+
+        const msOffset = Date.now() - offsetFromDate
         const dayOffset = msOffset / 1000 / 60 / 60 / 24
         const targetIndex = Math.floor(dayOffset + 0) % targetWords.length
-        const targetEntry = targetWords[targetIndex];
-        targetWordNumber = targetEntry.Number
-        targetWord = targetEntry.Word.toLowerCase()
+        targetEntry = targetWords[targetIndex];
+        targetWordNumber = targetEntry.number
+        targetWord = targetEntry.word.toLowerCase()
 
-        showBadge(targetEntry.Status)
+        showBadge(targetEntry.status)
         fetchGameState()
     } catch (error) {
         console.error('Error reading JSON file:', error);
     }
 }
 
+function parseAnswerCSV(csv) {
+    const lines = csv.split('\n');
+    const headers = lines[0].split(',');
+
+    const result = lines.slice(1).map(line => {
+        const values = line.split(',');
+        const obj = {};
+        headers.forEach((header, index) => {
+            obj[header.trim().toLowerCase()] = values[index].trim();
+        });
+        return obj;
+    });
+
+    return result;
+}
+
+function parseDictionaryCSV(csv) {
+    const lines = csv.trim().split('\n')
+    const result = lines.map(line => line.trim())
+
+    return result
+}
+
+function matchIndexRegardlessOfFada(word, wordList) {
+    const normalizedWord = convertFadaToEnglish(word);
+
+    for (let i = 0; i < wordList.length; i++) {
+        const normalizedListWord = convertFadaToEnglish(wordList[i]);
+        if (normalizedListWord.toLowerCase() === normalizedWord.toLowerCase()) {
+            return i
+        }
+    }
+
+    return null
+}
+
+function convertFadaToEnglish(inputString) {
+    let result = ''
+    for (let char of inputString) {
+        result += convertFada(char, false)
+    }
+    return result
+}
+
+function convertFada(char, toIrish = true) {
+    const fadaMapToEnglish = {
+        'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U'
+    }
+
+    const fadaMapToIrish = {
+        'a': 'á', 'e': 'é', 'i': 'í', 'o': 'ó', 'u': 'ú', 'A': 'Á', 'E': 'É', 'I': 'Í', 'O': 'Ó', 'U': 'Ú'
+    }
+
+    if (toIrish) {
+        return fadaMapToIrish[char] || char
+    } else {
+        return fadaMapToEnglish[char] || char
+    }
+}
+
+function hasFada(inputString) {
+    // Regular expression to match any fada character
+    const fadaRegex = /[áéíóúÁÉÍÓÚ]/
+
+    // Test the input string against the regular expression
+    return fadaRegex.test(inputString)
+}
+
 function fetchGameState() {
-    // need to get the game state for the account from the main site?
+    // Need to get the game state for the account from the main site?
 
     const localStateJSON = localStorage.getItem("gameState")
     let localGameState = null
@@ -117,17 +194,19 @@ function playAgain() {
     const tiles = document.querySelectorAll('.tile')
 
     tiles.forEach(tile => {
-        const letter = tile.textContent
-        const key = keyboard.querySelector(`[data-key="${letter}"i]`)
-        if (key != null) {
-            key.classList.remove("wrong")
-            key.classList.remove("wrong-location")
-            key.classList.remove("correct")
-        }
+        if (!tile.classList.contains("dummy")) {
+            const letter = convertFada(tile.textContent.trim(), false)
+            const key = keyboard.querySelector(`[data-key="${letter}"i]`)
+            if (key != null) {
+                key.classList.remove("wrong")
+                key.classList.remove("wrong-location")
+                key.classList.remove("correct")
+            }
 
-        tile.textContent = ""
-        delete tile.dataset.state
-        delete tile.dataset.letter
+            tile.textContent = ""
+            delete tile.dataset.state
+            delete tile.dataset.letter
+        }
     })
 
     gameState = {
@@ -139,22 +218,6 @@ function playAgain() {
     }
 
     startInteraction()
-}
-
-function parseCSV(csv) {
-    const lines = csv.split('\n');
-    const headers = lines[0].split(',');
-
-    const result = lines.slice(1).map(line => {
-        const values = line.split(',');
-        const obj = {};
-        headers.forEach((header, index) => {
-            obj[header.trim()] = values[index].trim();
-        });
-        return obj;
-    });
-
-    return result;
 }
 
 function startInteraction() {
@@ -253,7 +316,7 @@ function loadGuess(guess) {
     }
 
     stopInteraction()
-    const activeTiles = [...getActiveTiles()]
+    const activeTiles = [...getActiveTiles()].slice(-5)
     activeTiles.forEach((...params) => flipTile(...params, guess, false))
 }
 
@@ -265,13 +328,30 @@ function submitGuess() {
         return
     }
 
-    const guess = activeTiles.reduce((word, tile) => {
-        return word + tile.dataset.letter
+    let guess = activeTiles.reduce((word, tile) => {
+        return word + tile.dataset.letter;
     }, "")
 
-    // Could alternatively sort to only allow the use of irish words to guess the irish wordle, and english words to guess the english wordle
-    const targetWordsDictionary = targetWords.map(entry => entry.Word.toLowerCase()) 
-    const validWord = englishDictionary.includes(guess) || irishDictionary.includes(guess) || targetWordsDictionary.includes(guess)
+    let validWord = false
+
+    // Check the word based on the target word (irish, english)
+    if (targetEntry.status.toLowerCase() === "as gaeilge inniu") {
+        // Target word is irish
+        const matchIndex = matchIndexRegardlessOfFada(guess, irishDictionary)
+        if (matchIndex === null) {
+        } else {
+            validWord = true
+            guess = irishDictionary[matchIndex]
+            console.log("Converted guess to: " + guess)
+        }
+    } else {
+        // Target word is english
+        validWord = englishDictionary.includes(guess)
+    }
+
+    if (validWord === false) {
+        validWord = irishDictionary.includes(guess) || englishDictionary.includes(guess)
+    }
 
     if (!validWord) {
         showAlert("Not in word list")
@@ -287,20 +367,22 @@ function submitGuess() {
 }
 
 function flipTile(tile, index, array, guess, writeData) {
-    const letter = tile.dataset.letter
-    const key = keyboard.querySelector(`[data-key="${letter}"i]`)
+    const englishLetter = convertFada(tile.dataset.letter, false)
+    const key = keyboard.querySelector(`[data-key="${englishLetter}"i]`)
+
+    const trueLetter = guess[index]
 
     let state = ""
-    if (targetWord[index] === letter) {
+    if (targetWord[index] === trueLetter) {
         state = "correct"
-    } else if (targetWord.includes(letter)) {
+    } else if (targetWord.includes(trueLetter)) {
         state = "wrong-location"
     } else {
         state = "wrong"
     }
 
     if (writeData) {
-        gameState.letters.push({ letter: letter, state: state })
+        gameState.letters.push({ letter: trueLetter, state: state })
         storeData()
     }
 
@@ -312,6 +394,10 @@ function flipTile(tile, index, array, guess, writeData) {
 
         tile.classList.remove("flip")
 
+        if (tile.textContent != trueLetter) {
+            tile.textContent = trueLetter
+        }
+        
         tile.dataset.state = state
         key.classList.add(state)
 
@@ -376,8 +462,15 @@ function showBadge(tag) {
     languageBadge.replaceChildren()
 
     const badge = document.createElement("img")
-    badge.src = tag === "As gaeilge inniu" ? "irish-badge.svg" : "english-badge.svg"
+    const isIrish = tag.toLowerCase() === "as gaeilge inniu"
+    badge.src = isIrish ? "irish-badge.svg" : "english-badge.svg"
     badge.classList.add("badge")
+
+    if (isIrish) {
+        setKeyboardToIrish()
+    } else {
+        setKeyboardToEnglish()
+    }
 
     languageBadge.appendChild(badge)
 }
@@ -477,7 +570,9 @@ function showPage(pageId) {
     stopInteraction()
 
     document.getElementById(pageId).classList.add('active')
-    if (pageId === "game" ) {
+    if (pageId === "game") {
+        hasOpennedGame = true
+
         if (gameState.progress === "in-progress") startInteraction()
 
         if (!stateWasLoaded) {
@@ -493,9 +588,17 @@ function showPage(pageId) {
         populateDistribution()
     } else if (pageId === "welcome-back") {
         generateWelcomeMessage()
+    } else if (pageId === "info") {
+        updateInfoScreen()
     }
     
     if (oldPage != null) lastPage = oldPage.id
+}
+
+function updateInfoScreen() {
+    const playButton = document.querySelector('.button.play')
+
+    playButton.textContent = hasOpennedGame ? "Continue" : " Play"
 }
 
 function loadGameStateOntoBoard() {
@@ -542,6 +645,9 @@ function generateWelcomeMessage() {
 }
 
 function populateStatistics() {
+    // This function is called when the statistics are loaded
+    // This is the ideal location to try and retreive cumulative data and display it
+
     const statistics = document.querySelectorAll('.statistic')
 
     statistics.forEach((stat, index) => {
@@ -613,6 +719,31 @@ function pressShare() {
     navigator.clipboard.writeText(textToCopy)
 
     showShareAlert(alertMessage)
+}
+
+function setKeyboardToIrish() {
+    const keys = []
+
+    keys.push(keyboard.querySelector(`[data-key="J"]`))
+    keys.push(keyboard.querySelector(`[data-key="K"]`))
+    keys.push(keyboard.querySelector(`[data-key="Q"]`))
+    keys.push(keyboard.querySelector(`[data-key="V"]`))
+    keys.push(keyboard.querySelector(`[data-key="W"]`))
+    keys.push(keyboard.querySelector(`[data-key="X"]`))
+    keys.push(keyboard.querySelector(`[data-key="Y"]`))
+    keys.push(keyboard.querySelector(`[data-key="Z"]`))
+
+    keys.forEach(key => {
+        key.classList.add("disable");
+    });
+}
+
+function setKeyboardToEnglish() {
+    const keys = document.querySelectorAll('.key.disable');
+
+    keys.forEach(key => {
+        key.classList.remove("disable")
+    })
 }
 
 function storeData() {

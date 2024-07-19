@@ -7,38 +7,39 @@
 
 body {
     background-color: white;
+    margin: 0;
+    padding: 0em;
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
-    margin: 0;
-    padding: 1em;
-    font-size: clamp(.5rem, 2.5vmin, 1.5rem);
+        padding-bottom: -5em;
 }
 
 svg {
     pointer-events: none;
 }
 
-a {
+a.exit {
     font-weight: bold;
     color: black;
     cursor: pointer;
 }
 
-a:link {
+
+a.exit:link {
     text-decoration: none;
 }
 
-a:visited {
+a.exit:visited {
     text-decoration: none;
 }
 
-a:hover {
+a.exit:hover {
     text-decoration: none;
 }
 
-a:active {
+a.exit:active {
     text-decoration: none;
 }
 
@@ -55,6 +56,13 @@ a:active {
 .page {
     visibility: hidden;
     position: absolute;
+
+    max-width: 100%;
+    max-height: 100%;
+    font-size: clamp(0.4rem, 2.65vh, 1.4rem);
+    margin-top: .5em;
+    padding-top: .5em;
+    overflow: hidden;
 }
 
 .page.active {
@@ -101,8 +109,10 @@ a:active {
 
 .icon {
     height: 1.25em;
-    margin-top: 50%;
+    margin-top: .5em;
+    offset-position: 1em;
     user-select: none;
+    cursor: pointer;
 }
 
 .underline {
@@ -126,7 +136,7 @@ a:active {
 
 .button.play {
     width: 9em;
-    margin-top: 2em;
+    margin-top: 1.60em;
 }
 
 .button.share {
@@ -147,12 +157,13 @@ a:active {
 
 .share-icon {
     width: auto;
-    height: 1.25em;
+    height: 1.2em;
 }
 
 h1 {
     font-weight: bold;
     font-size: 1.35em;
+    margin-top: -.5em;
     margin-bottom: -0.5em;
 }
 
@@ -181,7 +192,7 @@ h4 {
 }
 
 .reduced-margin-bottom {
-    margin-bottom: -.3em;
+    margin-bottom: -.9em;
 }
 
 .return-message {
@@ -270,7 +281,7 @@ h4 {
 .text-box {
     margin-top: 2em;
     margin-bottom: 2em;
-    width: 21em;
+    width: 20.5em;
     height: auto;
     font-size: .9em;
 }
@@ -342,6 +353,14 @@ h4 {
     --hue: 178;
     --saturation: 100%;
     --lightness: 19%;
+}
+
+.key.disable {
+    color: transparent;
+    --hue: 209;
+    --saturation: 7%;
+    --lightness: 90%;
+    pointer-events: none;
 }
 
 .guess-grid {
@@ -474,8 +493,7 @@ h4 {
 }
 
 .alert-container.stats {
-    top: auto;
-    bottom: 19vh;
+    top: clamp(1em, 80vh, 30em);
 }
 
 .alert {
