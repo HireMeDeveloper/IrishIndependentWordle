@@ -12,7 +12,7 @@ Notes on Implementation:
         gameState.puzzle (puzzle number as int)
         gameState.letters (array of objects with letters[i].letter and letters[i].state where letter is a string with a single letter, and state is a string of either 'wrong', 'wrong-location', or 'correct')
         gameState.attempts (number of attempts as int)
-        gameState.progress (string of either 'in-progress', 'won', or 'lost')3
+        gameState.progress (string of either 'in-progress', 'won', or 'lost')
         gameState.completed (boolean, this will always be true at the time of completion)
     There is also an event that is called when the stats page is loaded. 
         This event can be used to call both the "populateStatistics()" and "populateDistribution()" functions
@@ -34,3 +34,7 @@ Questions:
         Pressing it allows the user to play the current puzzle again, but without saving.
         It is currently replacing the language badge, is there another place you would like this? Possibly on the stats screen?
         If if you do not want the replay button, it is easy to remove, so let me know.
+    When the user presses the share button, I am storing text information to the clipboard.
+        The emojis are chosen from a set number of options available in Unicode.
+        I cannot add my own colors to these, and I am at the mercy of what is available in unicode standard.
+        Here are the colors I have been able to find within the unicode standard: 🟥🟧🟨🟩🟦🟪🟫⬛⬜
