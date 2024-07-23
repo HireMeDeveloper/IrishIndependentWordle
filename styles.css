@@ -13,7 +13,7 @@ body {
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
-        padding-bottom: -5em;
+    padding-bottom: -5em;
 }
 
 svg {
@@ -41,6 +41,10 @@ a.exit:hover {
 
 a.exit:active {
     text-decoration: none;
+}
+
+.welcome-content {
+    margin-top: 6em;
 }
 
 .hide {
@@ -162,9 +166,9 @@ a.exit:active {
 
 h1 {
     font-weight: bold;
-    font-size: 1.35em;
+    font-size: 1.5em;
     margin-top: -.5em;
-    margin-bottom: -0.5em;
+    margin-bottom: 0em;
 }
 
 h2 {
@@ -287,7 +291,13 @@ h4 {
 }
 
 .text-box.small {
-    width: 10em;
+    width: 15em;
+    margin-left: -2em;
+    text-align: left;
+}
+
+.info {
+    font-size: 0.85em;
 }
 
 .keyboard {
@@ -497,8 +507,9 @@ h4 {
 }
 
 .alert {
+    border: solid;
     pointer-events: none;
-    background-color: hsl(204, 7%, 85%);
+    background-color: lime;
     padding: .75em;
     border-radius: .25em;
     opacity: 1;

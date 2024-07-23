@@ -15,24 +15,22 @@ Notes on Implementation:
         gameState.progress (string of either 'in-progress', 'won', or 'lost')3
         gameState.completed (boolean, this will always be true at the time of completion)
     There is also an event that is called when the stats page is loaded. 
-        This event can be used to call both the "updateStatistics()" and "updateDistribution()" functions
-        The "updateStatistics()" function takes an array of numbers with length of 5, each representing the data for the statistics in order
-        The "updateDistribution()" function takes an array of ints with length of 6, for each of the bars in the distribution where the index is the number of guesses for a win (index 0 = 1 guess, index 5 = 6 guesses)
-    Examples for both events are shown at the top of the script.js on lines 46 and 62
+        This event can be used to call both the "populateStatistics()" and "populateDistribution()" functions
+        The "populateStatistics()" function takes an array of numbers with length of 5, each representing the data for the statistics in order
+        The "populateDistribution()" function takes an array of ints with length of 6, for each of the bars in the distribution where the index is the number of guesses for a win (index 0 = 1 guess, index 5 = 6 guesses)
+    Examples for both events are shown at the top of the script.js on lines 47 and 63
+
+Testing:
+    There is a temporary way to test Irish words.
+        To do this just open the game screen, and hold the Space Bar for 3 seconds.
+        This will reset the game and switch to the first irish word in the dictionary.
+        This will not store data, and the game will count as a replay.
+        This is temporary, and can be removed by removing the event listeners for the space bar.
+    The current stats menu has hardcoded stats.
+        These dummy stats come from the Examples for the populateStatistics() and populateDistribution() functions starting on line 63
 
 Questions:
-    You mentioned an X at the top to close the info page. 
-        I have currently replace the text on the "Play" button, to instead say "Continue" when the user revisits the page. 
-        This is temporary, but where would you like the X at the top of the info page, since there is a header that matches the style of the game. 
-        I could remove the header, and instead use the verical logo (similar to the stats page), and show the X or the "Play" button, based on if the player has revisited the info screen.
-        So this means that on first openeing the puzzle for the day, the "Play" button will be at the bottom of the info screen, but after going from the game to the info screen, there would instead be the 'X' at the top.
-        Let me know the specifics of the design here.
-    You mentioned that it would require data from all users to provide the 'Average turns" statistic.
-        In order to simplify this, I would recomend only tracking the players average turns, and not comparing it to the global average turns for all players.
-        This will simplify the data being sent to the "populateStatistics()" function, and prevent the need to gather player data accross all players
-    You mentioned needing to call events in the parent, since this html doc will be nested within an iframe on the main site.
-        Currently both of the events (onStatsUpdate and onFirstCompletion) are dispatched both on the current document, and the parent document
-        This can be seen on lines 572 and 617 of the current script.js
-        Let me know if this is what you needed
-    I wasnt sure if you literally meant "black" for the keys that dont appear in the Irish language (J, K, Q, V, W, X, Y, Z) when an Irish puzzl is present, but they are disabled using a light color to show that they are inactive
-        Let me know if you would rather have a black color for these disabled keys
+    Ive implemented the replay button, and it currently appears after completing the current puzzle.
+        Pressing it allows the user to play the current puzzle again, but without saving.
+        It is currently replacing the language badge, is there another place you would like this? Possibly on the stats screen?
+        If if you do not want the replay button, it is easy to remove, so let me know.

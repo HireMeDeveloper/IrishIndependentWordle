@@ -19,6 +19,7 @@ let gameState = {
 let stateWasLoaded = false
 let wasReset = false
 let hasOpennedGame = false
+let pageTimeout
 
 fetchCSV()
 
@@ -70,6 +71,36 @@ document.addEventListener('onStatsUpdate', e => {
 
     populateStatistics(dummyStatistics)
     populateDistribution(dummyDistribution)
+})
+
+// This is a temp solution to set the word to irish for testing (hold space for 3 seconds)
+let pressTimer
+let timerSet = false
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === ' ' && !timerSet) {
+        timerSet = true
+        pressTimer = setTimeout(function () {
+            targetEntry = targetWords[6]
+            targetWordNumber = targetEntry.number
+            targetWord = targetEntry.word.toLowerCase()
+
+            showBadge(targetEntry.status);
+
+            playAgain();
+
+            console.log("Triggered debug reset, word is now: " + targetWord)
+
+            timerSet = false
+        }, 3000)
+    }
+})
+
+document.addEventListener('keyup', function (event) {
+    if (event.key === ' ') {
+        clearTimeout(pressTimer)
+        timerSet = false
+    }
 })
 
 async function fetchCSV() {
@@ -192,7 +223,7 @@ function fetchGameState() {
     }
 
     if (gameState.attempts > 0) {
-        showPage("welcome-back")
+        showPage("welcome")
     } else {
         showPage('info')
     }
@@ -363,6 +394,7 @@ function submitGuess() {
         // Target word is irish
         const matchIndex = matchIndexRegardlessOfFada(guess, irishDictionary)
         if (matchIndex === null) {
+            validWord = irishDictionary.includes(guess)
         } else {
             validWord = true
             guess = irishDictionary[matchIndex]
@@ -371,10 +403,6 @@ function submitGuess() {
     } else {
         // Target word is english
         validWord = englishDictionary.includes(guess)
-    }
-
-    if (validWord === false) {
-        validWord = irishDictionary.includes(guess) || englishDictionary.includes(guess)
     }
 
     if (!validWord) {
@@ -428,7 +456,7 @@ function flipTile(tile, index, array, guess, writeData) {
         if (index === array.length - 1) {
             tile.addEventListener("transitionend", () => {
                 startInteraction()
-                checkWinLose(guess, array)
+                checkWinLose(guess, array, writeData)
             }, {once: true})
         }
     }, {once: true})
@@ -528,36 +556,45 @@ function shakeTiles(tiles) {
     });
 }
 
-function checkWinLose(guess, tiles) {
-    if (guess === targetWord) {
+function checkWinLose(guess, tiles, hasTimeout) {
+    const remainingTiles = guessGrid.querySelectorAll(":not([data-letter])")
+
+    let progressString = ""
+    const hasWon = guess === targetWord
+
+    if (hasWon) {
+        // Win
         showAlert("You Win", 5000)
         danceTiles(tiles)
-        stopInteraction()
-        gameState.progress = "won"
-        storeData()
-
-        // Remove this if replay is not desired
-        setReplayButton(true)
-
-        if (gameState.completed === false) {
-            completeFirstPuzzleOfTheDay()
-        }
+        progressString = "won"
+    } else if (remainingTiles.length === 0) {
+        // Loss3
+        showAlert(targetWord.toUpperCase(), null)
+        progressString = "lost"
+    } else {
+        // No win or loss
         return
     }
 
-    const remainingTiles = guessGrid.querySelectorAll(":not([data-letter])")
-    if (remainingTiles.length === 0) {
-        showAlert(targetWord.toUpperCase(), null)
-        stopInteraction();
-        gameState.progress = "lost"
-        storeData()
+    stopInteraction();
+    gameState.progress = progressString
+    storeData()
 
-        // Remove this if replay is not desired
-        setReplayButton(true)
+    // Remove this if replay is not desired
+    setReplayButton(true)
 
-        if (gameState.completed === false) {
-            completeFirstPuzzleOfTheDay()
-        }
+    if (gameState.completed === false && wasReset === false) {
+        completeFirstPuzzleOfTheDay()
+    }
+
+    if (hasTimeout) {
+        pageTimeout = setTimeout(() => {
+            if (hasWon) {
+                showPage("welcome")
+            } else {
+                showPage("stats")
+            }
+        }, 1000 * (hasWon ? 2.5 : 5))
     }
 }
 
@@ -584,11 +621,19 @@ function danceTiles(tiles) {
 }
 
 function showLast() {
+    console.log("Showing last: " + lastPage)
     showPage(lastPage)
 }
 
-function showPage(pageId) {
-    const oldPage = document.querySelector('.page.active')
+function showPage(pageId, oldPage = null) {
+    if (pageTimeout != null) clearTimeout(pageTimeout)
+
+    if (oldPage === null) {
+        const page = document.querySelector('.page.active')
+        if (page != null) {
+            oldPage = page.id
+        }
+    }
 
     const pages = document.querySelectorAll('.page')
     pages.forEach(page => {
@@ -615,13 +660,13 @@ function showPage(pageId) {
 
         // Event is also dispatched on the parent document
         parent.document.dispatchEvent(statsUpdateEvent)
-    } else if (pageId === "welcome-back") {
+    } else if (pageId === "welcome") {
         generateWelcomeMessage()
     } else if (pageId === "info") {
         updateInfoScreen()
     }
     
-    if (oldPage != null) lastPage = oldPage.id
+    if (oldPage != null) lastPage = oldPage
 }
 
 function updateInfoScreen() {
@@ -646,14 +691,26 @@ function loadGameStateOntoBoard() {
 }
 
 function generateWelcomeMessage() {
+    const welcomeHeader = document.querySelector("[data-return-header]")
     const welcomeMessage = document.querySelector("[data-return-message]")
+    const welcomeButton = document.querySelector("[data-return-button]")
     const welcomeDate = document.querySelector("[data-return-date]")
     const welcomeNumber = document.querySelector("[data-return-number]")
 
     if (gameState.progress === "in-progress") {
+        welcomeHeader.textContent = "Failte,"
         welcomeMessage.textContent = "You've made " + gameState.attempts + " of 6 guesses. Keep going!"
+        welcomeButton.textContent = "Continue"
+        welcomeButton.onclick = () => {
+            showPage('game')
+        }
     } else {
-        welcomeMessage.textContent = "Tomorrow's a new day, with a new puzzle. See you then."
+        welcomeHeader.textContent = "Well?"
+        welcomeMessage.textContent = "Tomorrow brings another puzzle. See you then."
+        welcomeButton.textContent = "See Stats"
+        welcomeButton.onclick = () => {
+            showPage('stats', 'game')
+        }
     }
 
     const today = new Date();
@@ -745,7 +802,7 @@ function pressShare() {
         return
     } 
 
-    let textToCopy = "Focail " + targetWordNumber + " " + gameStateForShare.attempts + "/6\n\n"
+    let textToCopy = "Irish Idependent Focail " + targetWordNumber + " " + gameStateForShare.attempts + "/6\n\n"
 
     gameStateForShare.letters.forEach((tile, index) => {
         switch (tile.state) {
