@@ -28,6 +28,10 @@ Testing:
         This is temporary, and can be removed by removing the event listeners for the space bar.
     The current stats menu has hardcoded stats.
         These dummy stats come from the Examples for the populateStatistics() and populateDistribution() functions starting on line 63
+    When it comes to implementing the document into an iframe, I made some updates to better scale the width with smaller screen sizes.
+        I have had the best luck when using vh for the height instead of pixel counts, but this might not be ideal for your setup. 
+        These is an example included within the iframe.html
+        Let we know if you have futher issues, as I am not testing under the same conditions as you.
 
 Questions:
     Ive implemented the replay button, and it currently appears after completing the current puzzle.
@@ -38,3 +42,4 @@ Questions:
         The emojis are chosen from a set number of options available in Unicode.
         I cannot add my own colors to these, and I am at the mercy of what is available in unicode standard.
         Here are the colors I have been able to find within the unicode standard: 🟥🟧🟨🟩🟦🟪🟫⬛⬜
+    Toast alert was set to use the default lime color from css, let me know if you would rather use a hsl color code.
