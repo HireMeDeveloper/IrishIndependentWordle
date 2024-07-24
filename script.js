@@ -16,6 +16,17 @@ let gameState = {
     progress: "in-progress",
     completed: false
 }
+let cumulativeData = {
+    games: [],
+    distribution: [
+        0, 0, 0, 0, 0, 0
+    ]
+}
+
+// game: { number, turns, isWin, isEnglish}
+
+let currentGuesses = []
+
 let stateWasLoaded = false
 let wasReset = false
 let hasOpennedGame = false
@@ -45,32 +56,68 @@ const statsAlertContainer = document.querySelector("[data-stats-alert-container]
 // gameState.completed (boolean, this will always be true at the time of completion)
 
 document.addEventListener('onFirstCompletion', e => {
+    e.stopPropagation();
+
     const customGameState = e.detail
-    console.log("Event Detail: " + customGameState.letters.length)
+
+    let game = {
+        number: customGameState.puzzle,
+        turns: customGameState.attempts,
+        isWin: customGameState.progress === "won",
+        isEnglish: targetEntry.status === "in english today"
+    }
+
+    if (!cumulativeData.games.some(existingGame => existingGame.number === game.number)) {
+        cumulativeData.games.push(game);
+    } else {
+        console.log("Entry for puzzle: " + game.number + " already present.")
+    }
+
+    let distribution = [
+        0, 0, 0, 0, 0, 0
+    ]
+
+    for (let i = 0; i < cumulativeData.games.length; i++) {
+        const game = cumulativeData.games[i]
+
+        if (game.turns > distribution.length || game.turns <= 0) continue
+        distribution[game.turns - 1]++
+    }
+
+    cumulativeData.distribution = distribution
+
+    storeCumulativeData()
 })
 
-// Another custom event "onStatsUpdate" is called after the stats screen is updated. This can be used to call "UpdateStats(json)" with the apropriate information
+// Another custom event "onStatsUpdate" is called after the stats screen is updated.
 const statsUpdateEvent = new Event("onStatsUpdate")
 
-// Here is an example of the data being sent into the "populateStatistics()" and "populateDistribution()" functions
-// The statisticsData is an array of numbers with length of 5, each representing the data for the statistics in order
-// 0: is the number of games played
-// 1: is the win percentage
-// 2: is the current streak of wins
-// 3: is the longest streak of wins
-// 4: is the average turns to solve
-// The distributionData is just an array of ints with length of 6, for each of the bars in the distribution where the index is the number of guesses for a win (index 0 = 1 guess, index 5 = 6 guesses)
 document.addEventListener('onStatsUpdate', e => {
+    e.stopPropagation();
+
+    console.log("Stats update")
+
     const dummyStatistics = [
-        9, 100, 1, 1, 4.2
+        { number: 1, turns: 3, isWin: true, isEnglish: true },
+        { number: 2, turns: 6, isWin: true, isEnglish: false },
+        { number: 3, turns: 4, isWin: true, isEnglish: true },
+        { number: 4, turns: 5, isWin: true, isEnglish: false },
+        { number: 5, turns: 6, isWin: true, isEnglish: true },
+        { number: 6, turns: 4, isWin: true, isEnglish: true },
+        { number: 8, turns: 6, isWin: true, isEnglish: false },
+        { number: 9, turns: 3, isWin: true, isEnglish: true },
+        { number: 10, turns: 6, isWin: true, isEnglish: true },
+        { number: 11, turns: 2, isWin: true, isEnglish: false }
     ]
 
-    const dummyDistribution = [
-        1, 2, 3, 6, 2, 1
+    const dummyDist = [
+        0, 1, 2, 2, 1, 4
     ]
 
-    populateStatistics(dummyStatistics)
-    populateDistribution(dummyDistribution)
+    const statistics = getCumulativeStatistics()
+
+    populateStatistics(statistics)
+    populateDistribution(cumulativeData.distribution)
 })
 
 // This is a temp solution to set the word to irish for testing (hold space for 3 seconds)
@@ -125,12 +172,14 @@ async function fetchCSV() {
         const msOffset = Date.now() - offsetFromDate
         const dayOffset = msOffset / 1000 / 60 / 60 / 24
         const targetIndex = Math.floor(dayOffset + 0) % targetWords.length
+
         targetEntry = targetWords[targetIndex];
         targetWordNumber = targetEntry.number
         targetWord = targetEntry.word.toLowerCase()
 
         showBadge(targetEntry.status)
         fetchGameState()
+        fetchCumulativeData()
     } catch (error) {
         console.error('Error reading JSON file:', error);
     }
@@ -197,22 +246,17 @@ function convertFada(char, toIrish = true) {
 }
 
 function hasFada(inputString) {
-    // Regular expression to match any fada character
     const fadaRegex = /[áéíóúÁÉÍÓÚ]/
 
-    // Test the input string against the regular expression
     return fadaRegex.test(inputString)
 }
 
 function fetchGameState() {
-    // Need to get the game state for the account from the main site?
-
     const localStateJSON = localStorage.getItem("gameState")
     let localGameState = null
     if (localStateJSON != null) {
         localGameState = JSON.parse(localStateJSON)
 
-        // Only use the local game state if it is for todays puzzle
         if (localGameState.puzzle === targetWordNumber) {
             gameState = localGameState
         } else {
@@ -238,13 +282,86 @@ function resetGameState() {
         completed: false
     }
 
-    storeData()
+    storeGameStateData()
 }
+
+function fetchCumulativeData() {
+    const localStoreJSON = localStorage.getItem("cumulativeData")
+    if (localStoreJSON != null) {
+        cumulativeData = JSON.parse(localStoreJSON)
+    } else {
+        resetGameState()
+    }
+}
+
+function resetCumulativeData() {
+    cumulativeData = {
+        games: []
+    }
+
+    storeCumulativeData()
+}
+
+function getCumulativeStatistics(games = null, distribution = null) {
+    if (games === null) {
+        games = cumulativeData.games
+    }
+
+    if (distribution === null) {
+        distribution = cumulativeData.distribution
+    }
+
+    const wins = games.filter(game => game.isWin).length
+
+    const totalGames = games.length
+    const winPercent = wins / totalGames
+
+    let currentWinStreak = 0
+    let longestWinStreak = 0
+    let lastGameNumber = null
+
+    for (let i = 0; i < games.length; i++) {
+        let game = games[i]
+
+        if (game.isWin && (lastGameNumber === null || game.number === lastGameNumber + 1)) {
+            currentWinStreak++
+
+            if (currentWinStreak > longestWinStreak) {
+                longestWinStreak = currentWinStreak
+            }
+        } else {
+            currentWinStreak = (game.isWin) ? 1 : 0
+        }
+
+        lastGameNumber = game.number
+    }
+
+    let totalTurns = 0
+    let totalGamesInDist = 0
+
+    for (let i = 0; i < distribution.length; i++) {
+        totalTurns += (distribution[i] * (i + 1))
+        totalGamesInDist += distribution[i]
+    }
+
+    const averageTurns = totalTurns / totalGamesInDist
+
+    return [
+        totalGames,
+        (totalGames > 0) ? winPercent : 0,
+        currentWinStreak,
+        longestWinStreak,
+        (totalGames > 0) ? averageTurns : 0
+    ]
+}
+
 
 function playAgain() {
     wasReset = true
     setReplayButton(false)
     clearAlerts()
+
+    currentGuesses = []
 
     const tiles = document.querySelectorAll('.tile')
 
@@ -364,11 +481,13 @@ function deleteKey() {
 }
 
 function loadGuess(guess) {
-    console.log("Loading guess: " + guess)
+    //console.log("Loading guess: " + guess)
 
     for (let i = 0; i < guess.length; i++) {
         pressKey(guess.charAt(i), true)
     }
+
+    currentGuesses.push(guess)
 
     stopInteraction()
     const activeTiles = [...getActiveTiles()].slice(-5)
@@ -411,8 +530,10 @@ function submitGuess() {
         return
     }
 
+    currentGuesses.push(guess)
+
     gameState.attempts += 1
-    storeData()
+    storeGameStateData()
 
     stopInteraction()
     activeTiles.forEach((...params) => flipTile(...params, guess, true))
@@ -424,18 +545,54 @@ function flipTile(tile, index, array, guess, writeData) {
 
     const trueLetter = guess[index]
 
+    let duplicateLetters = []
+    let lettersInTargetWord = 0
+    let correctLetters = 0
+
+    for (let i = 0; i < targetWord.length; i++) {
+        const targetLetter = targetWord[i]
+
+        if (targetLetter === trueLetter) {
+            if (targetLetter === guess[i]) {
+                lettersInTargetWord++
+                correctLetters++
+            } else {
+                duplicateLetters.push(index)
+                lettersInTargetWord++
+            }
+        }
+    }
+
+    //console.log(trueLetter + "'s in word: " + lettersInTargetWord + " with " + correctLetters + " correct.")
+
     let state = ""
     if (targetWord[index] === trueLetter) {
         state = "correct"
     } else if (targetWord.includes(trueLetter)) {
-        state = "wrong-location"
+        let allowedDuplicates = lettersInTargetWord - correctLetters
+        let isWrong = true
+
+        for (let i = 0; i < duplicateLetters.length; i++){
+            duplicate = duplicateLetters[i]
+
+            if (allowedDuplicates === 0) continue
+            allowedDuplicates--
+
+            if (duplicate === index) isWrong = false
+        }
+
+        if (isWrong) {
+            state = "wrong"
+        } else {
+            state = "wrong-location"
+        }
     } else {
         state = "wrong"
     }
 
     if (writeData) {
         gameState.letters.push({ letter: trueLetter, state: state })
-        storeData()
+        storeGameStateData()
     }
 
     setTimeout(() => {
@@ -451,7 +608,16 @@ function flipTile(tile, index, array, guess, writeData) {
         }
         
         tile.dataset.state = state
-        key.classList.add(state)
+        
+        if (key.classList.contains("correct")) {
+            // Do nothing to the key state
+        } else if (key.classList.contains("wrong-location")) {
+            if (state === "correct") key.classList.add(state)
+        } else if (key.classList.contains("wrong")) {
+            if (state === "wrong-location" || state === "correct") key.classList.add(state)
+        } else {
+            key.classList.add(state)
+        }
 
         if (index === array.length - 1) {
             tile.addEventListener("transitionend", () => {
@@ -567,8 +733,8 @@ function checkWinLose(guess, tiles, hasTimeout) {
         showAlert("You Win", 5000)
         danceTiles(tiles)
         progressString = "won"
-    } else if (remainingTiles.length === 0) {
-        // Loss3
+    } else if (remainingTiles.length === 0 && !currentGuesses.includes(targetWord)) {
+        // Loss
         showAlert(targetWord.toUpperCase(), null)
         progressString = "lost"
     } else {
@@ -578,10 +744,7 @@ function checkWinLose(guess, tiles, hasTimeout) {
 
     stopInteraction();
     gameState.progress = progressString
-    storeData()
-
-    // Remove this if replay is not desired
-    setReplayButton(true)
+    storeGameStateData()
 
     if (gameState.completed === false && wasReset === false) {
         completeFirstPuzzleOfTheDay()
@@ -589,23 +752,16 @@ function checkWinLose(guess, tiles, hasTimeout) {
 
     if (hasTimeout) {
         pageTimeout = setTimeout(() => {
-            if (hasWon) {
-                showPage("welcome")
-            } else {
-                showPage("stats")
-            }
-        }, 1000 * (hasWon ? 2.5 : 5))
+            showPage("stats")
+        }, 1000 * (3))
     }
 }
 
 function completeFirstPuzzleOfTheDay() {
     gameState.completed = true
-    storeData()
+    localStorage.setItem("gameState", JSON.stringify(gameState))
 
     const gameStateEvent = new CustomEvent("onFirstCompletion", { detail: gameState })
-    document.dispatchEvent(gameStateEvent)
-
-    // Event is also dispatched on the parent
     parent.document.dispatchEvent(gameStateEvent)
 }
 
@@ -632,8 +788,11 @@ function showPage(pageId, oldPage = null) {
         const page = document.querySelector('.page.active')
         if (page != null) {
             oldPage = page.id
+        } else {
+            oldPage = "game"
         }
     }
+
 
     const pages = document.querySelectorAll('.page')
     pages.forEach(page => {
@@ -652,13 +811,11 @@ function showPage(pageId, oldPage = null) {
         }
 
         if (gameState.progress === "lost") {
+            console.log("Lost in showpage")
             showAlert(targetWord.toUpperCase(), null)
         }
     } 
     else if (pageId === "stats") {
-        document.dispatchEvent(statsUpdateEvent)
-
-        // Event is also dispatched on the parent document
         parent.document.dispatchEvent(statsUpdateEvent)
     } else if (pageId === "welcome") {
         generateWelcomeMessage()
@@ -739,8 +896,8 @@ function populateStatistics(statisticsData) {
     const statisticsLabels = [
         "Played",
         "Win %",
-        "Current Streak",
-        "Longest Streak",
+        "Current Win Streak",
+        "Longest Win Streak",
         "Average Turns"
     ]
 
@@ -749,6 +906,10 @@ function populateStatistics(statisticsData) {
         const label = stat.querySelector('.statistic-label')
 
         let entry = statisticsData[index]
+        if (index === 1) {
+            entry *= 100
+            entry.toFixed(0)
+        }
         if (index === 4) entry = entry.toFixed(2)
 
         if (entry != null) {
@@ -770,7 +931,7 @@ function populateDistribution(arr) {
 
         bar.textContent = number
 
-        bar.style.width = 1 + ((number / 5) * 16) + "em"
+        bar.style.width = 1 + ((number / largest) * 18) + "em"
 
         if (number === largest) bar.classList.add('last')
         else bar.classList.remove('last')
@@ -778,7 +939,7 @@ function populateDistribution(arr) {
 }
 
 function pressShare() {
-    let alertMessage = "Coppied to clipboard"
+    let alertMessage = "Link Copied! Share with Your Friends!"
     let gameStateForShare = null
 
     const localStateJSON = localStorage.getItem("gameState")
@@ -789,7 +950,7 @@ function pressShare() {
         // Only use the local game state if it is for todays puzzle
         if (localGameState.puzzle === targetWordNumber) {
             gameStateForShare = localGameState
-            if (wasReset) alertMessage = "First completion coppied to clipboard"
+            if (wasReset) alertMessage = "Link Copied! Share with Your Friends!"
         } else {
             gameStateForShare = gameState
         }
@@ -802,7 +963,7 @@ function pressShare() {
         return
     } 
 
-    let textToCopy = "Irish Idependent Focail " + targetWordNumber + " " + gameStateForShare.attempts + "/6\n\n"
+    let textToCopy = "Try Focail! " + targetWordNumber + " " + gameStateForShare.attempts + "/6\n\n"
 
     gameStateForShare.letters.forEach((tile, index) => {
         switch (tile.state) {
@@ -810,7 +971,7 @@ function pressShare() {
                 textToCopy += "⬛"
                 break;
             case "wrong-location":
-                textToCopy += "🟨"
+                textToCopy += "🟧"
                 break;
             case "correct":
                 textToCopy += "🟩"
@@ -851,12 +1012,13 @@ function setKeyboardToEnglish() {
     })
 }
 
-function storeData() {
+function storeGameStateData() {
     // Only store data on the first playthrough
     if (gameState.completed === true) return
 
     localStorage.setItem("gameState", JSON.stringify(gameState))
+}
 
-    // Also can store a version of the current state to an account of somekind
-    // This could then be recalled and used as a priority of localStorage
+function storeCumulativeData() {
+    localStorage.setItem("cumulativeData", JSON.stringify(cumulativeData))
 }

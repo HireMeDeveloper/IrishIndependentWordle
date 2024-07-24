@@ -518,9 +518,9 @@ h4 {
 }
 
 .alert {
-    border: solid;
+    border: none;
     pointer-events: none;
-    background-color: lime;
+    background-color: hsl(64, 64%, 61%);
     padding: .75em;
     border-radius: .25em;
     opacity: 1;

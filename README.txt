@@ -18,7 +18,8 @@ Notes on Implementation:
         This event can be used to call both the "populateStatistics()" and "populateDistribution()" functions
         The "populateStatistics()" function takes an array of numbers with length of 5, each representing the data for the statistics in order
         The "populateDistribution()" function takes an array of ints with length of 6, for each of the bars in the distribution where the index is the number of guesses for a win (index 0 = 1 guess, index 5 = 6 guesses)
-    Examples for both events are shown at the top of the script.js on lines 47 and 63
+    Both of these events are currently used with event listeners on lines 56 and 89.
+        These listeners are responsible for updating the cumulative local stats stored in localStorage for the player.
 
 Testing:
     There is a temporary way to test Irish words.
@@ -26,20 +27,17 @@ Testing:
         This will reset the game and switch to the first irish word in the dictionary.
         This will not store data, and the game will count as a replay.
         This is temporary, and can be removed by removing the event listeners for the space bar.
-    The current stats menu has hardcoded stats.
-        These dummy stats come from the Examples for the populateStatistics() and populateDistribution() functions starting on line 63
-    When it comes to implementing the document into an iframe, I made some updates to better scale the width with smaller screen sizes.
-        I have had the best luck when using vh for the height instead of pixel counts, but this might not be ideal for your setup. 
-        These is an example included within the iframe.html
-        Let we know if you have futher issues, as I am not testing under the same conditions as you.
+    I implemented a fix for the duplicate letters being treated as wrong-location, when there was only a single copy of the letter in the word.
+        I tested this and it appears to be working as intended.
+        However if you do run into any errors with irish words, screenshot and let me know, as its a bit harder for me to test without knowing irish.
 
 Questions:
-    Ive implemented the replay button, and it currently appears after completing the current puzzle.
-        Pressing it allows the user to play the current puzzle again, but without saving.
-        It is currently replacing the language badge, is there another place you would like this? Possibly on the stats screen?
-        If if you do not want the replay button, it is easy to remove, so let me know.
-    When the user presses the share button, I am storing text information to the clipboard.
-        The emojis are chosen from a set number of options available in Unicode.
-        I cannot add my own colors to these, and I am at the mercy of what is available in unicode standard.
+    When the user presses the share button, You said you want to use orange, green, and grey.
+        I am unable to find a grey square unicode character.
         Here are the colors I have been able to find within the unicode standard: 🟥🟧🟨🟩🟦🟪🟫⬛⬜
-    Toast alert was set to use the default lime color from css, let me know if you would rather use a hsl color code.
+        Note: these colors are black and white: ⬛⬜
+        I am currently using these: 🟩🟧⬛
+        Let me know if you find any specific ones that you prefer instead of white.
+    You had an issue with the 'X' on the stats page leading to a blank screen
+        I know what is causing this and implemented a fix, however, if you run into the issue again, please get me a screenshot of the console output beacuse this will help me identify what the issues is.
+        If the issue is to happen again, it should resort to openeing the game screen.
