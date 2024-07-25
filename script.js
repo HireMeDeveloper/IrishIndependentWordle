@@ -80,7 +80,7 @@ document.addEventListener('onFirstCompletion', e => {
     for (let i = 0; i < cumulativeData.games.length; i++) {
         const game = cumulativeData.games[i]
 
-        if (game.turns > distribution.length || game.turns <= 0) continue
+        if (game.turns > distribution.length || game.turns <= 0 || !game.isWin) continue
         distribution[game.turns - 1]++
     }
 
@@ -344,7 +344,7 @@ function getCumulativeStatistics(games = null, distribution = null) {
         totalGamesInDist += distribution[i]
     }
 
-    const averageTurns = totalTurns / totalGamesInDist
+    const averageTurns = (totalGamesInDist === 0) ? 0 : totalTurns / totalGamesInDist
 
     return [
         totalGames,
