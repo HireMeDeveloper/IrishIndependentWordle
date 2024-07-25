@@ -762,7 +762,8 @@ function completeFirstPuzzleOfTheDay() {
     localStorage.setItem("gameState", JSON.stringify(gameState))
 
     const gameStateEvent = new CustomEvent("onFirstCompletion", { detail: gameState })
-    parent.document.dispatchEvent(gameStateEvent)
+    //parent.document.dispatchEvent(gameStateEvent)
+    document.dispatchEvent(gameStateEvent)
 }
 
 function danceTiles(tiles) {
@@ -816,7 +817,8 @@ function showPage(pageId, oldPage = null) {
         }
     } 
     else if (pageId === "stats") {
-        parent.document.dispatchEvent(statsUpdateEvent)
+        //parent.document.dispatchEvent(statsUpdateEvent)
+        document.dispatchEvent(statsUpdateEvent)
     } else if (pageId === "welcome") {
         generateWelcomeMessage()
     } else if (pageId === "info") {
