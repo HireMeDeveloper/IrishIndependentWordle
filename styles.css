@@ -207,7 +207,11 @@ h4 {
 }
 
 .reduced-margin-bottom {
-    margin-bottom: -.9em;
+    margin-bottom: -1em;
+}
+
+.reduced-margin-bottom-large {
+    margin-bottom: -1.6em;
 }
 
 .return-message {
@@ -256,15 +260,15 @@ h4 {
 }
 
 .statistic-label {
-    font-size: 1em;
+    font-size: .65em;
 }
 
 .stats-grid {
     display: grid;
     justify-content: center;
     align-content: center;
-    grid-template-columns: repeat(3, 6em);
-    grid-template-rows: repeat(2, 4.25em);
+    grid-template-columns: repeat(5, 3em);
+    grid-template-rows: repeat(1, 4.25em);
     gap: .5em;
     margin-bottom: 1em;
     margin-top: -.5em;
@@ -514,7 +518,7 @@ h4 {
 }
 
 .alert-container.stats {
-    top: clamp(1em, 80vh, 30em);
+    top: clamp(1em, 60vh, 30em);
 }
 
 .alert {

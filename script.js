@@ -965,7 +965,7 @@ function pressShare() {
         return
     } 
 
-    let textToCopy = "Try Focail! " + targetWordNumber + " " + gameStateForShare.attempts + "/6\n\n"
+    let textToCopy ="Try Focail! " + targetWordNumber + " " + gameStateForShare.attempts + "/6\n\n"
 
     gameStateForShare.letters.forEach((tile, index) => {
         switch (tile.state) {
