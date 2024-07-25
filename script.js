@@ -933,9 +933,9 @@ function populateDistribution(arr) {
 
         bar.textContent = number
 
-        bar.style.width = 1 + ((number / largest) * 18) + "em"
+        bar.style.width = ((number === 0) ? 1 : 1 + ((number / largest) * 18)) + "em"
 
-        if (number === largest) bar.classList.add('last')
+        if (number === largest && number != 0) bar.classList.add('last')
         else bar.classList.remove('last')
     })
 }
