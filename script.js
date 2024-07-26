@@ -1,6 +1,6 @@
 // Script adjustments
 const ALLOW_MOBILE_SHARE = true; //This detects mobile devices, and uses the navigator.share() function to open the browsers built in share functionality. However, this relies on detecting mobile devices, which can be tricky. If the device is not mobile it will use the clipboard.  If this is set to false, it will always use the clipboard.
-const dateOfFirstPuzzle = new Date(2024, 6, 25) // Make sure this is a thursday so that irish words align on wednesdays (This is based on the current order within the 'Focail_Answers.csv')
+const DATE_OF_FIRST_PUZZLE = new Date(2024, 6, 25) // Make sure this is a thursday so that irish words align on wednesdays (This is based on the current order within the 'Focail_Answers.csv')
 
 // This is selected based on the number of days since the date of the first puzzle.
 let targetWord
@@ -142,7 +142,7 @@ async function fetchCSV() {
         const csvText3 = await responseCSV3.text();
         irishDictionary = parseDictionaryCSV(csvText3);
 
-        const msOffset = Date.now() - dateOfFirstPuzzle
+        const msOffset = Date.now() - DATE_OF_FIRST_PUZZLE
         const dayOffset = msOffset / 1000 / 60 / 60 / 24
         const targetIndex = Math.floor(dayOffset + 0) % targetWords.length
 
@@ -916,7 +916,7 @@ function populateDistribution(arr) {
 
         bar.textContent = number
 
-        bar.style.width = ((number === 0) ? 1 : 1 + ((number / largest) * 18)) + "em"
+        bar.style.width = ((number === 0) ? 1 : 1 + ((number / largest) * 16)) + "em"
 
         if (number === largest && number != 0) bar.classList.add('last')
         else bar.classList.remove('last')

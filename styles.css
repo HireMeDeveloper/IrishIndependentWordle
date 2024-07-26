@@ -287,7 +287,7 @@ h5 {
 }
 
 .stat-bar {
-    width: var(--width, 20em);
+    width: var(--width, 16em);
     height: auto;
     background: hsl(0, 0%, 50%);
     text-align: right;
