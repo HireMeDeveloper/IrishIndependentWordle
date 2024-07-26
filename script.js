@@ -1,13 +1,16 @@
+// Script adjustments
+const ALLOW_MOBILE_SHARE = true; //This detects mobile devices, and uses the navigator.share() function to open the browsers built in share functionality. However, this relies on detecting mobile devices, which can be tricky. If the device is not mobile it will use the clipboard.  If this is set to false, it will always use the clipboard.
+const dateOfFirstPuzzle = new Date(2024, 6, 25) // Make sure this is a thursday so that irish words align on wednesdays (This is based on the current order within the 'Focail_Answers.csv')
+
+// This is selected based on the number of days since the date of the first puzzle.
+let targetWord
+
 let englishDictionary
 let irishDictionary
 
 let tagetEntry = {}
 let targetWords
 let targetWordNumber
-
-// This is selected based on the number of days since January 1st, 2024. With the day number as the index from the targetWords array
-const offsetFromDate = new Date(2024, 0, 1)
-let targetWord
 
 let gameState = {
     puzzle: targetWordNumber,
@@ -64,7 +67,7 @@ document.addEventListener('onFirstCompletion', e => {
         number: customGameState.puzzle,
         turns: customGameState.attempts,
         isWin: customGameState.progress === "won",
-        isEnglish: targetEntry.status === "in english today"
+        isEnglish: targetEntry.status.toLowerCase() === "in english today"
     }
 
     if (!cumulativeData.games.some(existingGame => existingGame.number === game.number)) {
@@ -120,36 +123,6 @@ document.addEventListener('onStatsUpdate', e => {
     populateDistribution(cumulativeData.distribution)
 })
 
-// This is a temp solution to set the word to irish for testing (hold space for 3 seconds)
-let pressTimer
-let timerSet = false
-
-document.addEventListener('keydown', function (event) {
-    if (event.key === ' ' && !timerSet) {
-        timerSet = true
-        pressTimer = setTimeout(function () {
-            targetEntry = targetWords[6]
-            targetWordNumber = targetEntry.number
-            targetWord = targetEntry.word.toLowerCase()
-
-            showBadge(targetEntry.status);
-
-            playAgain();
-
-            console.log("Triggered debug reset, word is now: " + targetWord)
-
-            timerSet = false
-        }, 3000)
-    }
-})
-
-document.addEventListener('keyup', function (event) {
-    if (event.key === ' ') {
-        clearTimeout(pressTimer)
-        timerSet = false
-    }
-})
-
 async function fetchCSV() {
     try {
         const responseCSV1 = await fetch('Focail_Answers.csv');
@@ -169,7 +142,7 @@ async function fetchCSV() {
         const csvText3 = await responseCSV3.text();
         irishDictionary = parseDictionaryCSV(csvText3);
 
-        const msOffset = Date.now() - offsetFromDate
+        const msOffset = Date.now() - dateOfFirstPuzzle
         const dayOffset = msOffset / 1000 / 60 / 60 / 24
         const targetIndex = Math.floor(dayOffset + 0) % targetWords.length
 
@@ -260,9 +233,11 @@ function fetchGameState() {
         if (localGameState.puzzle === targetWordNumber) {
             gameState = localGameState
         } else {
+            console.log("Game state was reset since puzzle does not match")
             resetGameState()
         }
     } else {
+        console.log("Game state was reset since localStorage did not contain 'gameState'")
         resetGameState()
     }
 
@@ -290,7 +265,8 @@ function fetchCumulativeData() {
     if (localStoreJSON != null) {
         cumulativeData = JSON.parse(localStoreJSON)
     } else {
-        resetGameState()
+        console.log("Cumulative Data was reset")
+        resetCumulativeData()
     }
 }
 
@@ -454,6 +430,9 @@ function handleKeyPress(e) {
 
     if (e.key.match(/^[a-z]$/)) {
         pressKey(e.key)
+        return
+    } else if (e.key.match(/^[A-Z]$/)) {
+        pressKey(e.key.toLowerCase())
         return
     }
 }
@@ -794,6 +773,10 @@ function showPage(pageId, oldPage = null) {
         }
     }
 
+    if (pageId != "welcome" && pageId != "game" && pageId != "info" && pageId != "stats") {
+        console.log("Invalid page: " + pageId + ". Openning 'game' page.")
+        pageId = "game"
+    }
 
     const pages = document.querySelectorAll('.page')
     pages.forEach(page => {
@@ -910,7 +893,7 @@ function populateStatistics(statisticsData) {
         let entry = statisticsData[index]
         if (index === 1) {
             entry *= 100
-            entry.toFixed(0)
+            entry = entry.toFixed(0)
         }
         if (index === 4) entry = entry.toFixed(2)
 
@@ -984,9 +967,30 @@ function pressShare() {
         if (letterNumber % 5 === 0 && letterNumber != gameStateForShare.letters.length) textToCopy += "\n"
     })
 
-    navigator.clipboard.writeText(textToCopy)
+    if (navigator.share && detectTouchscreen() && ALLOW_MOBILE_SHARE) {
+        navigator.share({
+            text: textToCopy
+        })
+    } else {
+        navigator.clipboard.writeText(textToCopy)
+        showShareAlert(alertMessage)
+    }
+}
 
-    showShareAlert(alertMessage)
+function detectTouchscreen() {
+    var result = false
+    if (window.PointerEvent && ('maxTouchPoints' in navigator)) {
+        if (navigator.maxTouchPoints > 0) {
+            result = true
+        }
+    } else {
+        if (window.matchMedia && window.matchMedia("(any-pointer:coarse)").matches) {
+            result = true
+        } else if (window.TouchEvent || ('ontouchstart' in window)) {
+            result = true
+        }
+    }
+    return result
 }
 
 function setKeyboardToIrish() {

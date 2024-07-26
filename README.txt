@@ -1,14 +1,20 @@
 Summary:
-    This is a file that compiles a handful of notes to make testing the implementation easier, and provides some questions, answers, and needs that will help us wrap things up.
+    This is a file that compiles a handful of notes to make testing the implementation easier.
 
 Notes on Implementation:
-    The targetWord is selected based on how many days have passed since the 'offsetFromDate'. This is currently set to January 1st, 2024, so the target word number should reflect the number of the day we are at within the year.
+    The targetWord is selected based on how many days have passed since the 'DATE_OF_FIRST_PUZZLE'. 
+        This is currently set to July 25th, 2024, so the target word number should reflect the number of the day since then.
+        If you need to align irish puzzles to a certain day, it is based on the order of the words in "Focail_Answers.csv'.
+        Currently irish puzzles are set to appear only on wednesdays, but this is based on irish words apearing every 7 days in the 'Focail_Answers.csv', and the first puzzle appearing on a thursday.
     If you need to update the target words list, this is read from the "Focail_Dictionary.csv" file, but requires the same format, and spellings of the headings provided.
+        Also note the order of the words, and how that might change the alignment of irish puzzles.
     If you need to update the dictionaries for english and irish words, there are a few notes on the format of the .csv Focail_Answers
         Currently the .csv is expected to just be a list of words, with the file names "Dictionary_English.csv" and "Dictionary_Irish.csv"
         There are no headings at the top, so the first item in the list is the first word in the array.
         The irish words can include fada or not, it works just the same with either
-    After the first completion of the day, the 'onFirstCompletion' event is fired with the gameState of the completed puzzle. The event.details will represent the gameState object with the following format:
+    After the first completion of the day, the 'onFirstCompletion' event is fired with the gameState of the completed puzzle. 
+        This is currently only fired on this document, and not on the parent, as this was causing all the errors within your iframe.
+        The event.details will represent the gameState object with the following format:
         gameState.puzzle (puzzle number as int)
         gameState.letters (array of objects with letters[i].letter and letters[i].state where letter is a string with a single letter, and state is a string of either 'wrong', 'wrong-location', or 'correct')
         gameState.attempts (number of attempts as int)
@@ -18,26 +24,14 @@ Notes on Implementation:
         This event can be used to call both the "populateStatistics()" and "populateDistribution()" functions
         The "populateStatistics()" function takes an array of numbers with length of 5, each representing the data for the statistics in order
         The "populateDistribution()" function takes an array of ints with length of 6, for each of the bars in the distribution where the index is the number of guesses for a win (index 0 = 1 guess, index 5 = 6 guesses)
-    Both of these events are currently used with event listeners on lines 56 and 89.
-        These listeners are responsible for updating the cumulative local stats stored in localStorage for the player.
+    Both of these events are currently used with event listeners on lines 61 and 98.
+        These listeners are responsible for updating and populating stats with the cumulative local stats stored in localStorage for the player.
 
 Testing:
-    There is a temporary way to test Irish words.
-        To do this just open the game screen, and hold the Space Bar for 3 seconds.
-        This will reset the game and switch to the first irish word in the dictionary.
-        This will not store data, and the game will count as a replay.
-        This is temporary, and can be removed by removing the event listeners for the space bar.
-    I implemented a fix for the duplicate letters being treated as wrong-location, when there was only a single copy of the letter in the word.
-        I tested this and it appears to be working as intended.
-        However if you do run into any errors with irish words, screenshot and let me know, as its a bit harder for me to test without knowing irish.
-
-Questions:
-    When the user presses the share button, You said you want to use orange, green, and grey.
-        I am unable to find a grey square unicode character.
-        Here are the colors I have been able to find within the unicode standard: 🟥🟧🟨🟩🟦🟪🟫⬛⬜
-        Note: these colors are black and white: ⬛⬜
-        I am currently using these: 🟩🟧⬛
-        Let me know if you find any specific ones that you prefer instead of white.
-    You had an issue with the 'X' on the stats page leading to a blank screen
-        I know what is causing this and implemented a fix, however, if you run into the issue again, please get me a screenshot of the console output beacuse this will help me identify what the issues is.
-        If the issue is to happen again, it should resort to openeing the game screen.
+    I have added a few variables at the top of script.js, that can quickly be adjusted.
+        ALLOW_MOBILE_SHARE is a bool that controls if the share button will try to detect mobile browsers, and use the navigator.share() function.
+            If this is false, or if a mobile browser is not detected, then the clipboard will be used instead.
+            It is difficult to detect mobile browsers, as there are so many different mobile devices out there, but I have implemented the best mobile detection I could find using feature detection.
+        DATE_OF_FIRST_PUZZLE is used the mark the date that the first puzzle in the 'Focail_Answers.csv' list will be active.
+            This will also determine the alignment of irish puzzles, as they will appear in order starting from this date.
+            Currently this is set to a thursday so that irish puzzles land on wednesdays.
