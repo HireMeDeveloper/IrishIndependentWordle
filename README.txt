@@ -38,3 +38,9 @@ Testing:
     Both events currently in use are pushed to the window.dataLayer
         This includes: 'onFirstCompletion', and 'onStatsUpdate'
         The implementation on how this is done is on script.js line 128
+
+Questions:
+    Do you want me to push this to the window.dataLayer as well as the window.parent.dataLayer?
+    Are there any additional events you would like for analytics?
+        Currently the only event that is pushed is upon completion of the game, which holds all the data related to that puzzle?
+        There is also a simple event used when updating the stats page, but this does not hold any data.
