@@ -35,3 +35,6 @@ Testing:
         DATE_OF_FIRST_PUZZLE is used the mark the date that the first puzzle in the 'Focail_Answers.csv' list will be active.
             This will also determine the alignment of irish puzzles, as they will appear in order starting from this date.
             Currently this is set to a thursday so that irish puzzles land on wednesdays.
+    Both events currently in use are pushed to the window.dataLayer
+        This includes: 'onFirstCompletion', and 'onStatsUpdate'
+        The implementation on how this is done is on script.js line 128

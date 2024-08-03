@@ -123,6 +123,21 @@ document.addEventListener('onStatsUpdate', e => {
     populateDistribution(cumulativeData.distribution)
 })
 
+window.dataLayer = window.dataLayer || [];
+console.log(window.dataLayer)
+
+function pushEventToDataLayer(event) {
+    const eventName = event.type
+    const eventDetails = event.detail
+
+    window.dataLayer.push({
+        'event': eventName,
+        ...eventDetails
+    })
+
+    console.log(window.dataLayer)
+}
+
 async function fetchCSV() {
     try {
         const responseCSV1 = await fetch('Focail_Answers.csv');
@@ -272,7 +287,10 @@ function fetchCumulativeData() {
 
 function resetCumulativeData() {
     cumulativeData = {
-        games: []
+        games: [],
+        distribution: [
+            0, 0, 0, 0, 0, 0
+        ]
     }
 
     storeCumulativeData()
@@ -743,6 +761,8 @@ function completeFirstPuzzleOfTheDay() {
     const gameStateEvent = new CustomEvent("onFirstCompletion", { detail: gameState })
     //parent.document.dispatchEvent(gameStateEvent)
     document.dispatchEvent(gameStateEvent)
+
+    pushEventToDataLayer(gameStateEvent)
 }
 
 function danceTiles(tiles) {
@@ -802,6 +822,8 @@ function showPage(pageId, oldPage = null) {
     else if (pageId === "stats") {
         //parent.document.dispatchEvent(statsUpdateEvent)
         document.dispatchEvent(statsUpdateEvent)
+        pushEventToDataLayer(statsUpdateEvent)
+
     } else if (pageId === "welcome") {
         generateWelcomeMessage()
     } else if (pageId === "info") {
