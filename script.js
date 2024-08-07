@@ -158,8 +158,8 @@ async function fetchCSV() {
         const dayOffset = msOffset / 1000 / 60 / 60 / 24
         const targetIndex = Math.floor(dayOffset + 0) % targetWords.length
 
-        //targetEntry = targetWords[targetIndex];
-        targetEntry = targetWords[16]
+        targetEntry = targetWords[targetIndex];
+        //targetEntry = targetWords[16]
 
         targetWordNumber = targetEntry.number
         targetWord = targetEntry.word.toLowerCase()
