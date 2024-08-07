@@ -124,7 +124,6 @@ document.addEventListener('onStatsUpdate', e => {
 })
 
 window.dataLayer = window.dataLayer || [];
-console.log(window.dataLayer)
 
 function pushEventToDataLayer(event) {
     const eventName = event.type
@@ -134,8 +133,6 @@ function pushEventToDataLayer(event) {
         'event': eventName,
         ...eventDetails
     })
-
-    console.log(window.dataLayer)
 }
 
 async function fetchCSV() {
@@ -161,7 +158,9 @@ async function fetchCSV() {
         const dayOffset = msOffset / 1000 / 60 / 60 / 24
         const targetIndex = Math.floor(dayOffset + 0) % targetWords.length
 
-        targetEntry = targetWords[targetIndex];
+        //targetEntry = targetWords[targetIndex];
+        targetEntry = targetWords[16]
+
         targetWordNumber = targetEntry.number
         targetWord = targetEntry.word.toLowerCase()
 
@@ -542,9 +541,8 @@ function flipTile(tile, index, array, guess, writeData) {
 
     const trueLetter = guess[index]
 
-    let duplicateLetters = []
+    let correctLetters = []
     let lettersInTargetWord = 0
-    let correctLetters = 0
 
     for (let i = 0; i < targetWord.length; i++) {
         const targetLetter = targetWord[i]
@@ -552,27 +550,50 @@ function flipTile(tile, index, array, guess, writeData) {
         if (targetLetter === trueLetter) {
             if (targetLetter === guess[i]) {
                 lettersInTargetWord++
-                correctLetters++
+                correctLetters.push(i)
             } else {
-                duplicateLetters.push(index)
                 lettersInTargetWord++
             }
         }
     }
 
-    //console.log(trueLetter + "'s in word: " + lettersInTargetWord + " with " + correctLetters + " correct.")
+    let guessDuplicates = []
+
+    for (let i = 0; i < guess.length; i++){
+        const current = guess[i]
+
+        if (current === trueLetter) {
+            guessDuplicates.push(i)
+        }
+    }
+
+    //console.log(trueLetter + "'s in word: " + lettersInTargetWord + " with " + correctLetters.length + " correct.")
+    //console.log(guessDuplicates)
 
     let state = ""
     if (targetWord[index] === trueLetter) {
         state = "correct"
     } else if (targetWord.includes(trueLetter)) {
-        let allowedDuplicates = lettersInTargetWord - correctLetters
+        let allowedDuplicates = lettersInTargetWord
         let isWrong = true
 
-        for (let i = 0; i < duplicateLetters.length; i++){
-            duplicate = duplicateLetters[i]
+        // First pass is used to check for corrects
+        for (let i = 0; i < guessDuplicates.length; i++) {
+            let duplicate = guessDuplicates[i]
 
             if (allowedDuplicates === 0) continue
+            if (trueLetter === targetWord[duplicate]) {
+                allowedDuplicates--
+            }
+        }
+
+        // Second Pass is used to check for wrong-locations
+        for (let i = 0; i < guessDuplicates.length; i++){
+            let duplicate = guessDuplicates[i]
+
+            if (correctLetters.includes(duplicate)) continue
+            if (allowedDuplicates === 0) continue
+
             allowedDuplicates--
 
             if (duplicate === index) isWrong = false
