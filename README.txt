@@ -12,6 +12,8 @@ Notes on Implementation:
         Currently the .csv is expected to just be a list of words, with the file names "Dictionary_English.csv" and "Dictionary_Irish.csv"
         There are no headings at the top, so the first item in the list is the first word in the array.
         The irish words can include fada or not, it works just the same with either
+    When the game is first played, and the player presses the 'Play' button for the first time, the 'onGameStart' event will fire.
+        After this event has fired, the player will be met with the 'welcome' screen upon refreshing the page.
     After the first completion of the day, the 'onFirstCompletion' event is fired with the gameState of the completed puzzle. 
         This is currently only fired on this document, and not on the parent, as this was causing all the errors within your iframe.
         The event.details will represent the gameState object with the following format:
@@ -20,11 +22,12 @@ Notes on Implementation:
         gameState.attempts (number of attempts as int)
         gameState.progress (string of either 'in-progress', 'won', or 'lost')
         gameState.completed (boolean, this will always be true at the time of completion)
+        gameState.hasOpenedPuzzle (boolean, used to track if the player has oppened the puzzle for the first time)
     There is also an event that is called when the stats page is loaded. 
         This event can be used to call both the "populateStatistics()" and "populateDistribution()" functions
         The "populateStatistics()" function takes an array of numbers with length of 5, each representing the data for the statistics in order
         The "populateDistribution()" function takes an array of ints with length of 6, for each of the bars in the distribution where the index is the number of guesses for a win (index 0 = 1 guess, index 5 = 6 guesses)
-    Both of these events are currently used with event listeners on lines 61 and 98.
+    Both of these events are currently used with event listeners on lines 68 and 105.
         These listeners are responsible for updating and populating stats with the cumulative local stats stored in localStorage for the player.
 
 Testing:
@@ -35,12 +38,17 @@ Testing:
         DATE_OF_FIRST_PUZZLE is used the mark the date that the first puzzle in the 'Focail_Answers.csv' list will be active.
             This will also determine the alignment of irish puzzles, as they will appear in order starting from this date.
             Currently this is set to a thursday so that irish puzzles land on wednesdays.
-    Both events currently in use are pushed to the window.dataLayer
-        This includes: 'onFirstCompletion', and 'onStatsUpdate'
-        The implementation on how this is done is on script.js line 128
+        ENGLISH_DICTIONARY, IRISH_DICTIONARY, and ANSWERS_DICTIONARY
+            These are used to mark the file locations for the methods that fetch and create the JavaScript objects containing word and puzzle data.
+            Ensure that these constants point to the actual file locations, otherwise the try/catch block at script.js line 151 will throw an error (line 183).
+    Three events currently in use are pushed to the window.dataLayer
+        This includes: 'onFirstCompletion', 'onStatsUpdate', and 'onGameStart'
+        The implementation on how this is done is on script.js line 138
 
 Questions:
     Do you want me to push this to the window.dataLayer as well as the window.parent.dataLayer?
     Are there any additional events you would like for analytics?
-        Currently the only event that is pushed is upon completion of the game, which holds all the data related to that puzzle?
-        There is also a simple event used when updating the stats page, but this does not hold any data.
+        Currently the events that are pushed are 'onFirstCompletion', 'onStatsUpdate', and 'onGameStart'
+    The first error that you ran into with the provided screenshot looks to be caused by the file locations for the csv resources.
+        To remedy this ive added new constants at the top of the script.js (lines 5-8) that can be used to point to the file locations for your implementation.
+        Let me know if this fixes the error.

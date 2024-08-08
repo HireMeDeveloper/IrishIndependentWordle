@@ -2,6 +2,11 @@
 const ALLOW_MOBILE_SHARE = true; //This detects mobile devices, and uses the navigator.share() function to open the browsers built in share functionality. However, this relies on detecting mobile devices, which can be tricky. If the device is not mobile it will use the clipboard.  If this is set to false, it will always use the clipboard.
 const DATE_OF_FIRST_PUZZLE = new Date(2024, 6, 25) // Make sure this is a thursday so that irish words align on wednesdays (This is based on the current order within the 'Focail_Answers.csv')
 
+// To remedy any file location issues in the future, ensure that these constants point to the file locations used to fetch the dictionaries
+const ENGLISH_DICTIONARY = 'Dictionary_English.csv'
+const IRISH_DICTIONARY = 'Dictionary_Irish.csv'
+const ANSWERS_DICTIONARY = 'Focail_Answers.csv'
+
 // This is selected based on the number of days since the date of the first puzzle.
 let targetWord
 
@@ -17,7 +22,8 @@ let gameState = {
     letters: [],
     attempts: 0,
     progress: "in-progress",
-    completed: false
+    completed: false,
+    hasOpenedPuzzle: false
 }
 let cumulativeData = {
     games: [],
@@ -123,6 +129,9 @@ document.addEventListener('onStatsUpdate', e => {
     populateDistribution(cumulativeData.distribution)
 })
 
+// Another custom event "onStatsUpdate" is called after the stats screen is updated.
+const gameStartEvent = new Event("onGameStart")
+
 window.dataLayer = window.dataLayer || [];
 
 function pushEventToDataLayer(event) {
@@ -133,16 +142,18 @@ function pushEventToDataLayer(event) {
         'event': eventName,
         ...eventDetails
     })
+
+    console.log(window.dataLayer)
 }
 
 async function fetchCSV() {
     try {
-        const responseCSV1 = await fetch('Focail_Answers.csv');
+        const responseCSV1 = await fetch(ANSWERS_DICTIONARY);
         const csvText1 = await responseCSV1.text();
         targetWords = parseAnswerCSV(csvText1);
 
         // Parse csv for english dictionary
-        const responseCSV2 = await fetch('Dictionary_English.csv');
+        const responseCSV2 = await fetch(ENGLISH_DICTIONARY);
         const csvText2 = await responseCSV2.text();
         englishDictionary = parseDictionaryCSV(csvText2);
 
@@ -150,7 +161,7 @@ async function fetchCSV() {
         const targetWordsEnglish = targetWords.filter(entry => entry.status.toLowerCase() === "in english today").map(entry => entry.word)
         englishDictionary.push(...targetWordsEnglish)
 
-        const responseCSV3 = await fetch('Dictionary_Irish.csv');
+        const responseCSV3 = await fetch(IRISH_DICTIONARY);
         const csvText3 = await responseCSV3.text();
         irishDictionary = parseDictionaryCSV(csvText3);
 
@@ -255,7 +266,7 @@ function fetchGameState() {
         resetGameState()
     }
 
-    if (gameState.attempts > 0) {
+    if (gameState.hasOpenedPuzzle === true) {
         showPage("welcome")
     } else {
         showPage('info')
@@ -268,7 +279,8 @@ function resetGameState() {
         letters: [],
         attempts: 0,
         progress: "in-progress",
-        completed: false
+        completed: false,
+        hasOpenedPuzzle: false
     }
 
     storeGameStateData()
@@ -804,6 +816,15 @@ function showLast() {
 
 function showPage(pageId, oldPage = null) {
     if (pageTimeout != null) clearTimeout(pageTimeout)
+    
+    if (pageId === "game" && gameState.hasOpenedPuzzle === false) {
+        // Call game start event
+        document.dispatchEvent(gameStartEvent)
+        pushEventToDataLayer(gameStartEvent)
+
+        gameState.hasOpenedPuzzle = true
+        storeGameStateData()
+    }
 
     if (oldPage === null) {
         const page = document.querySelector('.page.active')
