@@ -63,6 +63,7 @@ const statsAlertContainer = document.querySelector("[data-stats-alert-container]
 // gameState.attempts (number of attempts as int)
 // gameState.progress (string of either 'in-progress', 'won', or 'lost')
 // gameState.completed (boolean, this will always be true at the time of completion)
+// gameState.hasOpenedPuzzle (boolean, used to track if the player has oppened the puzzle for the first time)
 
 document.addEventListener('onFirstCompletion', e => {
     e.stopPropagation();
@@ -107,26 +108,24 @@ document.addEventListener('onStatsUpdate', e => {
     console.log("Stats update")
 
     const dummyStatistics = [
-        { number: 1, turns: 3, isWin: true, isEnglish: true },
-        { number: 2, turns: 6, isWin: true, isEnglish: false },
-        { number: 3, turns: 4, isWin: true, isEnglish: true },
-        { number: 4, turns: 5, isWin: true, isEnglish: false },
-        { number: 5, turns: 6, isWin: true, isEnglish: true },
-        { number: 6, turns: 4, isWin: true, isEnglish: true },
-        { number: 8, turns: 6, isWin: true, isEnglish: false },
-        { number: 9, turns: 3, isWin: true, isEnglish: true },
-        { number: 10, turns: 6, isWin: true, isEnglish: true },
-        { number: 11, turns: 2, isWin: true, isEnglish: false }
+        { number: 207, turns: 6, isWin: false, isEnglish: false },
+        { number: 13, turns: 4, isWin: true, isEnglish: true },
+        { number: 14, turns: 6, isWin: true, isEnglish: false },
+        { number: 15, turns: 6, isWin: false, isEnglish: true },
+        { number: 20, turns: 3, isWin: false, isEnglish: true },
+        { number: 21, turns: 4, isWin: true, isEnglish: false }
     ]
 
     const dummyDist = [
-        0, 1, 2, 2, 1, 4
+        0, 0, 1, 2, 0, 0
     ]
 
     const statistics = getCumulativeStatistics()
+    //const statistics = getCumulativeStatistics(dummyStatistics, dummyDist)
 
     populateStatistics(statistics)
     populateDistribution(cumulativeData.distribution)
+    //populateDistribution(dummyDist)
 })
 
 // Another custom event "onStatsUpdate" is called after the stats screen is updated.
@@ -331,11 +330,12 @@ function getCumulativeStatistics(games = null, distribution = null) {
         if (game.isWin && (lastGameNumber === null || game.number === lastGameNumber + 1)) {
             currentWinStreak++
 
-            if (currentWinStreak > longestWinStreak) {
-                longestWinStreak = currentWinStreak
-            }
         } else {
             currentWinStreak = (game.isWin) ? 1 : 0
+        }
+
+        if (currentWinStreak > longestWinStreak) {
+            longestWinStreak = currentWinStreak
         }
 
         lastGameNumber = game.number
