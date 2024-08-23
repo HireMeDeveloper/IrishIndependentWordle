@@ -121,7 +121,6 @@ document.addEventListener('onStatsUpdate', e => {
     ]
 
     const statistics = getCumulativeStatistics()
-    //const statistics = getCumulativeStatistics(dummyStatistics, dummyDist)
 
     populateStatistics(statistics)
     populateDistribution(cumulativeData.distribution)
@@ -169,7 +168,7 @@ async function fetchCSV() {
         const targetIndex = Math.floor(dayOffset + 0) % targetWords.length
 
         targetEntry = targetWords[targetIndex];
-        //targetEntry = targetWords[16]
+        //targetEntry = targetWords[97]
 
         targetWordNumber = targetEntry.number
         targetWord = targetEntry.word.toLowerCase()
@@ -242,6 +241,11 @@ function convertFada(char, toIrish = true) {
     }
 }
 
+function getEnglishWord(word) {
+    // Convert the string to an array of characters, map over it, and convert each character
+    return Array.from(word).map(char => convertFada(char, false)).join('');
+}
+
 function hasFada(inputString) {
     const fadaRegex = /[áéíóúÁÉÍÓÚ]/
 
@@ -306,13 +310,9 @@ function resetCumulativeData() {
     storeCumulativeData()
 }
 
-function getCumulativeStatistics(games = null, distribution = null) {
+function getCumulativeStatistics(games = null) {
     if (games === null) {
         games = cumulativeData.games
-    }
-
-    if (distribution === null) {
-        distribution = cumulativeData.distribution
     }
 
     const wins = games.filter(game => game.isWin).length
@@ -323,15 +323,20 @@ function getCumulativeStatistics(games = null, distribution = null) {
     let currentWinStreak = 0
     let longestWinStreak = 0
     let lastGameNumber = null
+    let totalTurns = 0
 
     for (let i = 0; i < games.length; i++) {
         let game = games[i]
+        totalTurns += game.turns
 
-        if (game.isWin && (lastGameNumber === null || game.number === lastGameNumber + 1)) {
-            currentWinStreak++
-
+        if (game.isWin) {
+            if (lastGameNumber !== null && game.number === lastGameNumber + 1) {
+                currentWinStreak++
+            } else {
+                currentWinStreak = 1  // Start a new streak for a non-consecutive win
+            }
         } else {
-            currentWinStreak = (game.isWin) ? 1 : 0
+            currentWinStreak = 0  // Reset streak on a loss
         }
 
         if (currentWinStreak > longestWinStreak) {
@@ -341,15 +346,7 @@ function getCumulativeStatistics(games = null, distribution = null) {
         lastGameNumber = game.number
     }
 
-    let totalTurns = 0
-    let totalGamesInDist = 0
-
-    for (let i = 0; i < distribution.length; i++) {
-        totalTurns += (distribution[i] * (i + 1))
-        totalGamesInDist += distribution[i]
-    }
-
-    const averageTurns = (totalGamesInDist === 0) ? 0 : totalTurns / totalGamesInDist
+    const averageTurns = (totalGames === 0) ? 0 : totalTurns / totalGames;
 
     return [
         totalGames,
@@ -548,7 +545,10 @@ function submitGuess() {
 }
 
 function flipTile(tile, index, array, guess, writeData) {
-    const englishLetter = convertFada(tile.dataset.letter, false)
+    const englishTargetWord = getEnglishWord(targetWord)
+    const englishGuess = getEnglishWord(guess)
+
+    const englishLetter = convertFada(guess[index], false)
     const key = keyboard.querySelector(`[data-key="${englishLetter}"i]`)
 
     const trueLetter = guess[index]
@@ -556,11 +556,11 @@ function flipTile(tile, index, array, guess, writeData) {
     let correctLetters = []
     let lettersInTargetWord = 0
 
-    for (let i = 0; i < targetWord.length; i++) {
-        const targetLetter = targetWord[i]
+    for (let i = 0; i < englishTargetWord.length; i++) {
+        const targetLetter = englishTargetWord[i]
 
-        if (targetLetter === trueLetter) {
-            if (targetLetter === guess[i]) {
+        if (targetLetter === englishLetter) {
+            if (targetLetter === englishGuess[i]) {
                 lettersInTargetWord++
                 correctLetters.push(i)
             } else {
@@ -569,12 +569,14 @@ function flipTile(tile, index, array, guess, writeData) {
         }
     }
 
+    //console.log("Target letters: " + englishLetter +" : " + lettersInTargetWord)
+
     let guessDuplicates = []
 
-    for (let i = 0; i < guess.length; i++){
-        const current = guess[i]
+    for (let i = 0; i < englishGuess.length; i++){
+        const current = englishGuess[i]
 
-        if (current === trueLetter) {
+        if (current === englishLetter) {
             guessDuplicates.push(i)
         }
     }
@@ -583,9 +585,9 @@ function flipTile(tile, index, array, guess, writeData) {
     //console.log(guessDuplicates)
 
     let state = ""
-    if (targetWord[index] === trueLetter) {
+    if (englishTargetWord[index] === englishLetter) {
         state = "correct"
-    } else if (targetWord.includes(trueLetter)) {
+    } else if (englishTargetWord.includes(englishLetter)) {
         let allowedDuplicates = lettersInTargetWord
         let isWrong = true
 
@@ -594,7 +596,7 @@ function flipTile(tile, index, array, guess, writeData) {
             let duplicate = guessDuplicates[i]
 
             if (allowedDuplicates === 0) continue
-            if (trueLetter === targetWord[duplicate]) {
+            if (englishLetter === englishTargetWord[duplicate]) {
                 allowedDuplicates--
             }
         }
