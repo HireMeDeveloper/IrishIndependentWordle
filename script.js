@@ -168,7 +168,7 @@ async function fetchCSV() {
         const targetIndex = Math.floor(dayOffset + 0) % targetWords.length
 
         targetEntry = targetWords[targetIndex];
-        //targetEntry = targetWords[97]
+        //targetEntry = targetWords[22 - 1]
 
         targetWordNumber = targetEntry.number
         targetWord = targetEntry.word.toLowerCase()
@@ -322,25 +322,37 @@ function getCumulativeStatistics(games = null) {
 
     let currentWinStreak = 0
     let longestWinStreak = 0
-    let lastGameNumber = null
+    let lastGameNumber = -1
     let totalTurns = 0
+
+    //console.log("Games: " + JSON.stringify(games))
 
     for (let i = 0; i < games.length; i++) {
         let game = games[i]
         totalTurns += game.turns
 
+        //console.log("GameNumber: " + game.number + " LastGameNumber: " + lastGameNumber)
+        //console.log(lastGameNumber !== -1)
+        //console.log(Number(game.number) === Number(lastGameNumber) + 1)
+
         if (game.isWin) {
-            if (lastGameNumber !== null && game.number === lastGameNumber + 1) {
+            if (lastGameNumber !== -1 && (Number(game.number) === Number(lastGameNumber) + 1)) {
                 currentWinStreak++
+
+                //console.log("Part of a consecutive streak, so winstreak is now: " + currentWinStreak)
             } else {
                 currentWinStreak = 1  // Start a new streak for a non-consecutive win
+
+                //console.log("Not part of a consecutive streak, so winstreak is now: " + currentWinStreak)
             }
         } else {
             currentWinStreak = 0  // Reset streak on a loss
+            //console.log("Was a loss, so winstreak is now: " + currentWinStreak)
         }
 
         if (currentWinStreak > longestWinStreak) {
             longestWinStreak = currentWinStreak
+            //console.log("longestWinStreak: " + longestWinStreak)
         }
 
         lastGameNumber = game.number
@@ -977,6 +989,15 @@ function populateDistribution(arr) {
     const statBars = document.querySelectorAll('.stat-bar')
     const largest = Math.max(...arr)
 
+    let lastGuessSize = 0
+    if (cumulativeData.games.length > 0) {
+        const lastGame = cumulativeData.games[cumulativeData.games.length - 1]
+
+        lastGuessSize = ((lastGame.isWin) ? lastGame.turns : 0)
+    }
+
+    console.log("last guess: " + lastGuessSize)
+
     statBars.forEach((bar, index) => {
         const number = arr[index]
 
@@ -984,7 +1005,7 @@ function populateDistribution(arr) {
 
         bar.style.width = ((number === 0) ? 1 : 1 + ((number / largest) * 16)) + "em"
 
-        if (number === largest && number != 0) bar.classList.add('last')
+        if (index + 1 === lastGuessSize && number != 0) bar.classList.add('last')
         else bar.classList.remove('last')
     })
 }
