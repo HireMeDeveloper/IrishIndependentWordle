@@ -56,6 +56,8 @@ const guessGrid = document.querySelector("[data-guess-grid]")
 const alertContainer = document.querySelector("[data-alert-container]")
 const statsAlertContainer = document.querySelector("[data-stats-alert-container]")
 
+setupUiPressBindings()
+
 // Custom event is 'onFirstCompletion' and the event detail is the current gameState at the time of completion
 // This will include:
 // gameState.puzzle (puzzle number as int)
@@ -406,16 +408,87 @@ function playAgain() {
     startInteraction()
 }
 
+function bindPress(element, handler) {
+    if (element == null || typeof handler !== "function") return
+
+    element.onclick = null
+    element.onpointerdown = null
+    element.ontouchstart = null
+
+    if (window.PointerEvent) {
+        element.onpointerdown = function (event) {
+            if (event.pointerType === "mouse" && event.button !== 0) return
+            event.preventDefault()
+            handler.call(this, event)
+        }
+        return
+    }
+
+    let ignoreClickUntil = 0
+
+    element.ontouchstart = function (event) {
+        ignoreClickUntil = Date.now() + 700
+        event.preventDefault()
+        handler.call(this, event)
+    }
+
+    element.onclick = function (event) {
+        if (Date.now() < ignoreClickUntil) return
+        handler.call(this, event)
+    }
+}
+
+function unbindPress(element) {
+    if (element == null) return
+
+    element.onclick = null
+    element.onpointerdown = null
+    element.ontouchstart = null
+}
+
+function setupUiPressBindings() {
+    document.querySelectorAll("[data-open-stats]").forEach(element => {
+        bindPress(element, () => {
+            showPage("stats")
+        })
+    })
+
+    const infoButton = document.querySelector("[data-open-info]")
+    bindPress(infoButton, () => {
+        showPage("info")
+    })
+
+    const infoPlayButton = document.querySelector("[data-play-info]")
+    bindPress(infoPlayButton, () => {
+        showPage("game")
+    })
+
+    const replayButton = document.querySelector("[data-replay]")
+    bindPress(replayButton, () => {
+        playAgain()
+    })
+
+    const shareButton = document.querySelector("[data-share]")
+    bindPress(shareButton, () => {
+        pressShare()
+    })
+
+    const statsExitButton = document.querySelector("[data-exit-stats]")
+    bindPress(statsExitButton, () => {
+        showLast()
+    })
+}
+
 function startInteraction() {
-    document, addEventListener("click", handleMouseClick)
-    document, addEventListener("keydown", handleKeyPress)
+    document.addEventListener("click", handleMouseClick)
+    document.addEventListener("keydown", handleKeyPress)
 
     selectNextTile()
 }
 
 function stopInteraction(){
-    document, removeEventListener("click", handleMouseClick)
-    document, removeEventListener("keydown", handleKeyPress)
+    document.removeEventListener("click", handleMouseClick)
+    document.removeEventListener("keydown", handleKeyPress)
 
     deselectAllTiles()
 }
@@ -921,16 +994,16 @@ function generateWelcomeMessage() {
         welcomeHeader.textContent = "Failte,"
         welcomeMessage.textContent = "You've made " + gameState.attempts + " of 6 guesses. Keep going!"
         welcomeButton.textContent = "Continue"
-        welcomeButton.onclick = () => {
+        bindPress(welcomeButton, () => {
             showPage('game')
-        }
+        })
     } else {
         welcomeHeader.textContent = "Well?"
         welcomeMessage.textContent = "Tomorrow brings another puzzle. See you then."
         welcomeButton.textContent = "See Stats"
-        welcomeButton.onclick = () => {
+        bindPress(welcomeButton, () => {
             showPage('stats', 'game')
-        }
+        })
     }
 
     const today = new Date();

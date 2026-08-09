@@ -15,7 +15,7 @@
             <div class="header">
                 <img src="Focail_horizontal.svg" class="focail">
                 <div>
-                    <a onclick="showPage('stats')">
+                    <a data-open-stats>
                         <img src="stats-icon.svg" class="icon">
                     </a>
                 </div>
@@ -69,7 +69,7 @@
             </p>
         </div>
         <div class="centered">
-            <button class="button play" onclick="showPage('game')">Play</button>
+            <button class="button play" data-play-info>Play</button>
         </div>
     </div>
     <div id="game" class="page">
@@ -79,18 +79,18 @@
                 <div class="header">
                     <img src="Focail_horizontal.svg" class="focail">
                     <div>
-                        <a onclick="showPage('info')">
+                        <a data-open-info>
                             <img src="info-icon.svg" class="icon">
                         </a>
                     </div>
                     <div>
-                        <a onclick="showPage('stats')">
+                        <a data-open-stats>
                             <img src="stats-icon.svg" class="icon">
                         </a>
                     </div>
                     <div data-language-badge></div>
                     <div class="centered hide" data-replay-button>
-                        <button class="button replay" onclick="playAgain()">Replay</button>
+                        <button class="button replay" data-replay>Replay</button>
                     </div>
                 </div>
             </div>
@@ -170,7 +170,7 @@
     <div id="stats" class="page">
         <div class="alert-container stats" data-stats-alert-container></div>
         <div class="box right">
-            <a class="exit" onclick="showLast()">X</a>
+            <a class="exit" data-exit-stats>X</a>
         </div>
         <div class="centered">
             <img src="Focail_centered.svg" class="focail-large">
@@ -234,7 +234,7 @@
             </div>
         </div>
         <div class="centered">
-            <button class="button share" onclick="pressShare()">
+            <button class="button share" data-share>
                 <div></div>
                 <div>Share</div>
                 <img src="share-icon.svg" class="share-icon">
@@ -255,7 +255,7 @@
                 </p>
             </div>
             <div class="centered">
-                <button class="button play" onclick="showPage('game')" data-return-button>Continue</button>
+                <button class="button play" data-return-button>Continue</button>
             </div>
             <p class="return-info centered" data-return-date>
                 July 15, 2024
