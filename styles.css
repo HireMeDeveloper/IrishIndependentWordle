@@ -347,6 +347,8 @@ h5 {
     border-radius: .25em;
     cursor: pointer;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .key.large {
@@ -359,8 +361,17 @@ h5 {
     height: 1.75em;
 }
 
-.key:hover, .key:focus {
+.key:hover, .key:focus-visible {
     --lightness-offset: 10%;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .key:hover,
+    .key:focus,
+    .key:focus-visible,
+    .key:active {
+        --lightness-offset: 0%;
+    }
 }
 
 .key.wrong {
