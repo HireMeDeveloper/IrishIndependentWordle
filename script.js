@@ -479,15 +479,46 @@ function setupUiPressBindings() {
     })
 }
 
+function bindKeyboardPresses() {
+    const keyboardButtons = keyboard.querySelectorAll("[data-key], [data-enter], [data-delete]")
+    keyboardButtons.forEach(button => {
+        bindPress(button, handleKeyboardButtonPress)
+    })
+}
+
+function unbindKeyboardPresses() {
+    const keyboardButtons = keyboard.querySelectorAll("[data-key], [data-enter], [data-delete]")
+    keyboardButtons.forEach(button => {
+        unbindPress(button)
+    })
+}
+
+function handleKeyboardButtonPress() {
+    if (this.matches("[data-key]")) {
+        pressKey(this.dataset.key)
+        return
+    }
+
+    if (this.matches("[data-enter]")) {
+        submitGuess()
+        return
+    }
+
+    if (this.matches("[data-delete]")) {
+        deleteKey()
+        return
+    }
+}
+
 function startInteraction() {
-    document.addEventListener("click", handleMouseClick)
+    bindKeyboardPresses()
     document.addEventListener("keydown", handleKeyPress)
 
     selectNextTile()
 }
 
 function stopInteraction(){
-    document.removeEventListener("click", handleMouseClick)
+    unbindKeyboardPresses()
     document.removeEventListener("keydown", handleKeyPress)
 
     deselectAllTiles()
@@ -509,23 +540,6 @@ function deselectAllTiles(){
     selectedTiles.forEach(tile => {
         delete tile.dataset.state
     })
-}
-
-function handleMouseClick(e) {
-    if (e.target.matches("[data-key]")) {
-        pressKey(e.target.dataset.key)
-        return
-    }
-
-    if (e.target.matches("[data-enter]")) {
-        submitGuess()
-        return
-    }
-
-    if (e.target.matches("[data-delete]")) {
-        deleteKey()
-        return
-    }
 }
 
 function handleKeyPress(e) {
